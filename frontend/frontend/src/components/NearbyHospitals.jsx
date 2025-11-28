@@ -5,7 +5,8 @@ export default function NearbyHospitals() {
   const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const API_KEY = "AIzaSyCmWusZjH8RfeX54oZElkUKWhTFmVyMkL0";  // Replace with your key
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
