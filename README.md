@@ -11,23 +11,23 @@ A machine-learning based web application that predicts diseases from user-provid
 - Secure & Scalable: Clean API structure with environment variable protection.
 
 ## 🏗️ Tech Stack
-##Frontend
+## Frontend
 - React.js
 - Tailwind CSS / CSS Modules
 - Axios
   
-##Backend
+## Backend
 - Node.js
 - Express.js
 -Python Shell / Child Process for ML execution
 
-##Machine Learning
+## Machine Learning
 - Python
 - NumPy
 - Pandas
 - Scikit-Learn
   
-##APIs
+## APIs
 - Google Places API
 - Custom ML Prediction API
 
@@ -53,28 +53,27 @@ root/
 
 ## ⚙️ Installation & Setup
 1️⃣ Clone the repository
-git clone https://github.com/sourav-kr14/AI-Powered-Disease-Prediction-System
-cd disease-predictor
+- git clone https://github.com/sourav-kr14/AI-Powered-Disease-Prediction-System
+- cd disease-predictor
 
 2️⃣ Install Python dependencies
-pip install -r requirements.txt
+- pip install -r requirements.txt
 
 3️⃣ Install Node.js dependencies
-cd server
-npm install
+- cd server
+- npm install
 
 4️⃣ Add environment variables
-
-Create a .env inside server/.
-PORT=5000
-GOOGLE_MAPS_API_KEY=your_api_key
+- Create a .env inside server/.
+- PORT=5000
+- GOOGLE_MAPS_API_KEY=your_api_key
 
 5️⃣ Start the backend server
-npm run dev
+- npm run dev
 
 6️⃣ Start the frontend
-cd client
-npm run dev
+- cd client
+- npm run dev
 
 ## 🔥 How It Works
 - User enters symptoms
@@ -86,12 +85,13 @@ npm run dev
 - Chatbot helps users step-by-step
 
 ## 🎯 Future Enhancements
-
 - Add probability/confidence score
 - Add voice-based symptom input
 - Add doctor appointment booking
 - Add real-time chat with healthcare assistant
 
-##🤝 Contributing
+## 🤝 Contributing
+- Pull requests are welcome. For major changes, open an issue first to discuss.
 
-Pull requests are welcome. For major changes, open an issue first to discuss.
+## 📜 License
+- This project is licensed under the MIT License.
