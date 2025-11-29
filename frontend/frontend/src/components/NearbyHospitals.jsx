@@ -5,25 +5,25 @@ export default function NearbyHospitals() {
   const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(true);
 
-const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
-
-
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-
-        const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=4000&type=hospital&key=${API_KEY}`;
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
 
         try {
-          const res = await axios.get(url);
-          setHospitals(res.data.results);
-          setLoading(false);
+        
+          const res = await axios.post("http://localhost:5000/api/hospitals", {
+            lat,
+            lng,
+          });
+
+          setHospitals(res.data.results || []);
         } catch (err) {
-          console.error(err);
-          setLoading(false);
+          console.error("Hospital fetch error:", err);
         }
+
+        setLoading(false);
       },
       () => {
         alert("Location access denied. Cannot fetch hospitals.");
