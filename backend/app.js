@@ -1,15 +1,24 @@
 const express = require("express");
 const path = require("path");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const app = express();
 connectDB();
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",         
+      "http://localhost:3000",         
+      "https://ai-powered-disease-prediction-syste.vercel.app/" 
+    ],
+    methods: ["GET", "POST"],
+  })
+);
 
 
-app.use(bodyParser.json());
+
+app.use(express.json());
 
 
 app.use(express.static(path.join(__dirname, "public")));
