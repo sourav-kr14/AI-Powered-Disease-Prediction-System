@@ -1,4 +1,3 @@
-import json
 import pickle
 import numpy as np
 import pandas as pd
@@ -12,7 +11,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ai-powered-disease-prediction-syste.vercel.app/"],  
+    allow_origins=["https://ai-powered-disease-prediction-system.vercel.app"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -35,7 +34,7 @@ symptom_index = {symptom: idx for idx, symptom in enumerate(symptoms_list)}
 
 # ---------- REQUEST SCHEMA ----------
 class PredictRequest(BaseModel):
-    symptoms: str   # comma-separated string
+    symptoms: str
 
 # ---------- ROUTES ----------
 @app.get("/")
@@ -46,6 +45,8 @@ def health():
 def predict(data: PredictRequest):
 
     symptoms_split = [s.strip().lower() for s in data.symptoms.split(",") if s.strip()]
+    if not symptoms_split:
+        return {"error": "No valid symptoms provided"}
 
     input_vector = [0] * len(symptom_index)
     for symptom in symptoms_split:
@@ -59,7 +60,8 @@ def predict(data: PredictRequest):
         nb_prob = naive_bayes.predict_proba(input_df)[0]
 
         try:
-            svm_prob = svm.predict_proba(input_df)[0]
+            known = hasattr(svm, "predict_proba")
+            svm_prob = svm.predict_proba(input_df)[0] if known else np.zeros_like(rfc_prob)
         except:
             svm_prob = np.zeros_like(rfc_prob)
 
@@ -68,7 +70,7 @@ def predict(data: PredictRequest):
 
         top3 = []
         for idx in top3_idx:
-            disease = encoder.inverse_transform([idx])[0]
+            disease = encoder.classes_[idx]   # ✅ FIXED
             confidence = round(float(avg_prob[idx]), 4)
             top3.append({
                 "disease": disease,
