@@ -5,8 +5,8 @@ const Prediction = require("../models/Prediction");
 
 const router = express.Router();
 
-// Use exact Python path
-const PYTHON_PATH = "C:\\Program Files\\Python311\\python.exe";
+const PYTHON_PATH = process.env.PYTHON_PATH || "python3";
+
 
 router.post("/", async (req, res) => {
   const { symptoms, location } = req.body;
@@ -15,7 +15,6 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Please enter symptoms." });
   }
 
-  // Run Python Script
   const python = spawn(PYTHON_PATH, [
     path.join(__dirname, "..", "..", "ml", "predict.py"),
   ]);
@@ -43,21 +42,17 @@ router.post("/", async (req, res) => {
     try {
       const result = JSON.parse(outputData);
 
-      // If Python returns an internal error
       if (result.error) {
         return res.status(500).json({ error: result.error });
       }
 
-      // SAVE TO MONGODB
       await Prediction.create({
         symptoms: symptoms.split(",").map((s) => s.trim().toLowerCase()),
         predictedDisease: result.prediction,
         userLocation: location || null,
       });
 
-      // Return the prediction to frontend
       res.json(result);
-
     } catch (err) {
       console.error("JSON parse error:", err);
       res.status(500).json({ error: "Invalid response from Python script." });
