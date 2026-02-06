@@ -21,6 +21,7 @@ app.use("/api/predict", predictRoute);
 app.use("/api/hospitals", require("./routes/hospitals"));
 
 
-app.listen(5000, () => {
-    console.log("🚀 Server running at http://localhost:5000");
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
