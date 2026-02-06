@@ -11,11 +11,6 @@ const allowedOrigins = [
   "https://ai-powered-disease-prediction-syste.vercel.app",
 ];
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "https://ai-powered-disease-prediction-syste.vercel.app",
-];
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
