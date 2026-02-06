@@ -5,16 +5,29 @@ const connectDB = require("./config/db");
 const app = express();
 connectDB();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://ai-powered-disease-prediction-syste.vercel.app"
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",         
-      "http://localhost:3000",         
-      "https://ai-powered-disease-prediction-syste.vercel.app" 
-    ],
+    origin: function (origin, callback) {
+      // allow requests with no origin (Postman, server-to-server)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("CORS not allowed"));
+      }
+    },
     methods: ["GET", "POST"],
+    credentials: true,
   })
 );
+
 
 
 
