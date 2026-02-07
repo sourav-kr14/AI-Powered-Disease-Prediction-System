@@ -14,7 +14,7 @@ export default function Predict() {
     setLoading(true);
     setResult(null);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/predict`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symptoms }),
