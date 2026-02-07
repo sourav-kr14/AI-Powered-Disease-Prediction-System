@@ -19,6 +19,7 @@ export default function Predict() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symptoms }),
       });
+      console.log(import.meta.env.VITE_API_URL);
 
       const data = await res.json();
       setResult(data);

@@ -6,17 +6,17 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
-# ---------- APP ----------
+
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ai-powered-disease-prediction-system.vercel.app"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ---------- LOAD MODELS ----------
+
 base = os.path.dirname(__file__)
 
 rfc = pickle.load(open(os.path.join(base, "rfc.pkl"), "rb"))
@@ -24,7 +24,7 @@ svm = pickle.load(open(os.path.join(base, "svm.pkl"), "rb"))
 naive_bayes = pickle.load(open(os.path.join(base, "nb.pkl"), "rb"))
 encoder = pickle.load(open(os.path.join(base, "encoder.pkl"), "rb"))
 
-# ---------- SYMPTOMS ----------
+
 symptoms_list = [
     'fever', 'headache', 'nausea', 'vomiting', 'fatigue', 'joint_pain',
     'skin_rash', 'cough', 'weight_loss', 'yellow_eyes'
@@ -32,11 +32,11 @@ symptoms_list = [
 
 symptom_index = {symptom: idx for idx, symptom in enumerate(symptoms_list)}
 
-# ---------- REQUEST SCHEMA ----------
+
 class PredictRequest(BaseModel):
     symptoms: str
 
-# ---------- ROUTES ----------
+
 @app.get("/")
 def health():
     return {"status": "API running"}
