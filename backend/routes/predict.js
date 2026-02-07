@@ -7,17 +7,18 @@ const router = express.Router();
 router.post("/", async (req, res) => {
   const { symptoms, location } = req.body;
 
-  if (!symptoms || !symptoms.trim()) {
-    return res.status(400).json({ error: "Please enter symptoms." });
+  if (!Array.isArray(symptoms) || symptoms.length === 0) {
+    return res.status(400).json({
+      error: "Symptoms must be a non-empty array",
+    });
   }
-
   try {
     console.log("Calling ML at:", `${process.env.ML_SERVICE_URL}/predict`);
 
     const mlResponse = await axios.post(
       `${process.env.ML_SERVICE_URL}/predict`,
       { symptoms },
-      { timeout: 30000 },
+      { timeout: 20000 },
     );
 
     const result = mlResponse.data;
@@ -30,7 +31,7 @@ router.post("/", async (req, res) => {
 
     return res.json(result);
   } catch (error) {
-    console.error("ML Service Error:", error.message);
+    console.error("ML Service Error:", error.response?.data || error.message);
 
     return res.status(503).json({
       error: "Prediction service unavailable",
