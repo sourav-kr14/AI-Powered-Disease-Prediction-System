@@ -24,7 +24,7 @@ router.post("/", async (req, res) => {
     const result = mlResponse.data;
 
     await Prediction.create({
-      symptoms: symptoms.split(",").map((s) => s.trim().toLowerCase()),
+      symptoms: symptoms.map((s) => s.trim().toLowerCase()),
       predictedDisease: result.prediction,
       userLocation: location || null,
     });
