@@ -13,7 +13,7 @@ connectDB();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
-  "https://ai-powered-disease-prediction-system.vercel.app", 
+  "https://ai-powered-disease-prediction-syste.vercel.app", 
 ];
 
 
