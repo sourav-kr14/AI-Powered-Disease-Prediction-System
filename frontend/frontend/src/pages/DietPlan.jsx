@@ -77,7 +77,7 @@ export default function DietPlan() {
     <div className="min-h-screen bg-black py-10 px-6 transition-colors duration-500">
       <div className="max-w-6xl mx-auto">
         
-        {/* HEADER NAVIGATION */}
+        {/* HEADER */}
         <div className="flex justify-between items-center mb-10 px-2">
           <Link to="/" className="flex items-center gap-2 text-zinc-400 hover:text-rose-400 transition-all font-bold text-xs group">
             <div className="p-2 bg-zinc-900 rounded-xl border border-zinc-800 group-hover:border-rose-500/50">
@@ -93,7 +93,7 @@ export default function DietPlan() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* LEFT: INPUT SIDEBAR */}
+          {/*  INPUT SIDEBAR */}
           <div className="lg:col-span-4">
             <div className="bg-zinc-900/40 backdrop-blur-2xl p-8 rounded-[2.5rem] border border-zinc-800/50 shadow-2xl">
               <div className="flex items-center gap-3 mb-8">
@@ -146,7 +146,7 @@ export default function DietPlan() {
             </div>
           </div>
 
-          {/* RIGHT: RESULTS CONTENT */}
+          {/* RESULTS CONTENT */}
           <div className="lg:col-span-8">
             <AnimatePresence mode="wait">
               {result ? (

@@ -211,7 +211,7 @@ export default function ChatBot({ onBack }) {
           </div>
         </div>
 
-        {/* Chat Area */}
+        {/* Chat Section */}
         <div
           className="flex-1 p-6 overflow-y-auto space-y-6 bg-slate-50/50 dark:bg-slate-900/50"
           style={{ height: "55vh" }}
@@ -269,7 +269,7 @@ export default function ChatBot({ onBack }) {
         </div>
       </div>
 
-      {/* Summary Card (Medical Report Style) */}
+      {/* Summary Card  */}
       <AnimatePresence>
         {summary && (
           <motion.div

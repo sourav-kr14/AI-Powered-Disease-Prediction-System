@@ -1,10 +1,26 @@
 import React, { useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, X, Activity, Sparkles, Loader2, Command } from "lucide-react";
+import {
+  Search,
+  Plus,
+  X,
+  Activity,
+  Sparkles,
+  Loader2,
+  Command,
+} from "lucide-react";
 
 const ALL_SYMPTOMS = [
-  "fever", "headache", "nausea", "vomiting", "fatigue",
-  "joint_pain", "skin_rash", "cough", "weight_loss", "yellow_eyes",
+  "fever",
+  "headache",
+  "nausea",
+  "vomiting",
+  "fatigue",
+  "joint_pain",
+  "skin_rash",
+  "cough",
+  "weight_loss",
+  "yellow_eyes",
 ];
 
 export default function InputCard({ onPredict }) {
@@ -17,8 +33,8 @@ export default function InputCard({ onPredict }) {
     if (!query.trim()) return [];
     return ALL_SYMPTOMS.filter(
       (sym) =>
-        sym.toLowerCase().includes(query.toLowerCase()) && 
-        !selectedSymptoms.includes(sym)
+        sym.toLowerCase().includes(query.toLowerCase()) &&
+        !selectedSymptoms.includes(sym),
     ).slice(0, 5);
   }, [query, selectedSymptoms]);
 
@@ -44,16 +60,19 @@ export default function InputCard({ onPredict }) {
 
   return (
     <div className="w-full max-w-2xl mx-auto bg-white dark:bg-slate-900 rounded-[2rem] p-6 sm:p-10 shadow-2xl shadow-indigo-500/5 border border-slate-200/60 dark:border-slate-800 transition-all">
-      
-      {/* HEADER SECTION */}
+      {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-none">
             <Activity className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Analysis Engine</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Add symptoms for real-time diagnosis</p>
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
+              Analysis Engine
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Add symptoms for real-time diagnosis
+            </p>
           </div>
         </div>
         <div className="self-start px-4 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[11px] font-black uppercase rounded-full tracking-widest flex items-center gap-2">
@@ -61,9 +80,11 @@ export default function InputCard({ onPredict }) {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        
-        {/* SELECTED SYMPTOMS AREA */}
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-8"
+      >
+        {/* SELECTED SYMPTOMS */}
         <div className="min-h-[50px]">
           <div className="flex flex-wrap gap-2">
             <AnimatePresence>
@@ -90,12 +111,12 @@ export default function InputCard({ onPredict }) {
           </div>
         </div>
 
-        {/* PREMIUM SEARCH INPUT */}
+        {/*SEARCH*/}
         <div className="relative group">
           <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
             <Search className="w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
           </div>
-          
+
           <input
             ref={inputRef}
             type="text"
@@ -106,12 +127,10 @@ export default function InputCard({ onPredict }) {
           />
 
           <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none">
-             <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md">
-                <Command className="w-2.5 h-2.5" /> K
-             </kbd>
+            <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md">
+              <Command className="w-2.5 h-2.5" /> K
+            </kbd>
           </div>
-
-          {/* FLOATING SUGGESTIONS */}
           <AnimatePresence>
             {suggestions.length > 0 && (
               <motion.div
@@ -130,7 +149,9 @@ export default function InputCard({ onPredict }) {
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600 group-hover:bg-indigo-500 transition-colors" />
-                        <span className="capitalize font-medium">{sym.replace("_", " ")}</span>
+                        <span className="capitalize font-medium">
+                          {sym.replace("_", " ")}
+                        </span>
                       </div>
                       <Plus className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" />
                     </button>

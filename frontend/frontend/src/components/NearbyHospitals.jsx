@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Navigation, Star, Phone, ExternalLink, Hospital, Loader2 } from "lucide-react";
+import {
+  MapPin,
+  Navigation,
+  Star,
+  Phone,
+  ExternalLink,
+  Hospital,
+  Loader2,
+} from "lucide-react";
 
 export default function NearbyHospitals() {
   const [hospitals, setHospitals] = useState([]);
@@ -14,7 +22,10 @@ export default function NearbyHospitals() {
         const { latitude: lat, longitude: lng } = pos.coords;
 
         try {
-          const res = await axios.post("http://localhost:5000/api/hospitals", { lat, lng });
+          const res = await axios.post("http://localhost:5000/api/hospitals", {
+            lat,
+            lng,
+          });
           setHospitals(res.data.results || []);
         } catch (err) {
           setError("Unable to connect to the medical directory.");
@@ -24,9 +35,11 @@ export default function NearbyHospitals() {
         }
       },
       () => {
-        setError("Location access denied. Please enable GPS to find nearby emergency care.");
+        setError(
+          "Location access denied. Please enable GPS to find nearby emergency care.",
+        );
         setLoading(false);
-      }
+      },
     );
   }, []);
 
@@ -38,7 +51,9 @@ export default function NearbyHospitals() {
           <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center shadow-lg shadow-rose-200">
             <Hospital className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-xl font-bold dark:text-white">Emergency Facilities</h2>
+          <h2 className="text-xl font-bold dark:text-white">
+            Emergency Facilities
+          </h2>
         </div>
         {!loading && hospitals.length > 0 && (
           <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
@@ -47,7 +62,6 @@ export default function NearbyHospitals() {
         )}
       </div>
 
-      {/* Loading State with Radar Animation */}
       {loading && (
         <div className="py-20 flex flex-col items-center justify-center">
           <div className="relative mb-6">
@@ -56,11 +70,12 @@ export default function NearbyHospitals() {
               <Navigation className="w-8 h-8 text-rose-500 animate-pulse" />
             </div>
           </div>
-          <p className="text-slate-500 font-medium animate-pulse text-sm">Scanning nearby medical facilities...</p>
+          <p className="text-slate-500 font-medium animate-pulse text-sm">
+            Scanning nearby medical facilities...
+          </p>
         </div>
       )}
 
-      {/* Error / Empty State */}
       {!loading && (error || hospitals.length === 0) && (
         <div className="py-12 px-6 text-center bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
           <MapPin className="w-10 h-10 text-slate-300 mx-auto mb-3" />
@@ -70,7 +85,6 @@ export default function NearbyHospitals() {
         </div>
       )}
 
-      {/* Hospital Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <AnimatePresence>
           {hospitals.map((h, i) => (
@@ -91,7 +105,7 @@ export default function NearbyHospitals() {
                   </div>
                 )}
               </div>
-              
+
               <div className="space-y-2 mb-4">
                 <p className="text-xs text-slate-500 dark:text-slate-400 flex items-start gap-1.5">
                   <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />

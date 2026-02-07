@@ -82,7 +82,6 @@ export default function HealthCard() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-zinc-200 selection:bg-indigo-500/30 font-sans overflow-x-hidden relative">
-      {/* PREMUM BACKGROUND ELEMENTS */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-600/10 blur-[120px] rounded-full" />
         <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-purple-600/10 blur-[120px] rounded-full" />
@@ -90,15 +89,14 @@ export default function HealthCard() {
       </div>
 
       <div className="relative z-10 max-w-lg mx-auto flex flex-col items-center py-12 px-6">
-        {/* TOP NAV */}
         <div className="w-full flex justify-between items-center mb-12 px-2">
-            <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-slate-400 hover:text-green-600 transition-colors mb-8 group text-sm font-medium"
-        >
-          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Dashboard
-        </Link>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-green-600 transition-colors mb-8 group text-sm font-medium"
+          >
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Dashboard
+          </Link>
 
           <div className="px-4 py-1.5 bg-indigo-500/5 border border-indigo-500/20 rounded-full flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
@@ -110,10 +108,8 @@ export default function HealthCard() {
 
         {/* MAIN CARD */}
         <div className="w-full bg-zinc-900/20 backdrop-blur-3xl rounded-[3rem] p-3 shadow-2xl border border-white/10 relative">
-          {/* INTERNAL GLOW */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
 
-          {/* TAB SYSTEM */}
           <div className="flex p-1.5 bg-zinc-950/60 rounded-[2.2rem] mb-6 border border-white/5">
             {["input", "result"].map((t) => (
               <button
@@ -203,7 +199,7 @@ export default function HealthCard() {
                   exit={{ opacity: 0, y: 20 }}
                   className="space-y-6"
                 >
-                  {/* SCORE DISPLAY */}
+                  {/* SCORE */}
                   <div className="relative aspect-square max-w-[240px] mx-auto flex flex-col items-center justify-center">
                     <svg className="w-full h-full -rotate-90">
                       <circle
