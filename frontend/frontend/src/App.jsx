@@ -5,17 +5,44 @@ import BMI from "./pages/BMI";
 import DietPlan from "./pages/DietPlan";
 import CalorieCalculator from "./pages/CalorieCalculator";
 import ChatBot from "./pages/ChatBot";
+import Footer from "./components/Footer";
+import Header from "./components/Header";
 export default function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/predict" element={<Predict />} />
-        <Route path="/bmi" element={<BMI />} />
-        <Route path="/diet" element={<DietPlan />} />
-        <Route path="/calories" element={<CalorieCalculator />} />
-        <Route path="/chat" element={<ChatBot />} />
-      </Routes>
+      <Header />
+      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 transition-colors duration-500">
+        <main className="flex-grow pt-24 md:pt-28 lg:pt-32">
+          <Routes>
+            <Route
+              path="/"
+              element={<Home />}
+            />
+            <Route
+              path="/predict"
+              element={<Predict />}
+            />
+            <Route
+              path="/bmi"
+              element={<BMI />}
+            />
+            <Route
+              path="/diet"
+              element={<DietPlan />}
+            />
+            <Route
+              path="/calories"
+              element={<CalorieCalculator />}
+            />
+            <Route
+              path="/chat"
+              element={<ChatBot />}
+            />
+          </Routes>
+        </main>
+
+        <Footer />
+      </div>
     </Router>
   );
 }

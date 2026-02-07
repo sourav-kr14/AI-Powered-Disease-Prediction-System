@@ -33,7 +33,7 @@ export default function Predict() {
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-slate-950 py-12 px-6">
       <div className="max-w-4xl mx-auto">
-        {/* Navigation */}
+  
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-slate-400 hover:text-indigo-600 transition-colors mb-8 group text-sm font-medium"
@@ -42,7 +42,7 @@ export default function Predict() {
           Back to Hub
         </Link>
 
-        {/* Page Header */}
+    
         <header className="mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-200">
@@ -58,12 +58,12 @@ export default function Predict() {
           </p>
         </header>
 
-        {/* Input Section */}
+     }
         <section className="mb-10">
           <InputCard onPredict={predictDisease} />
         </section>
 
-        {/* Dynamic Content Area */}
+      
         <AnimatePresence mode="wait">
           {loading && (
             <motion.div
