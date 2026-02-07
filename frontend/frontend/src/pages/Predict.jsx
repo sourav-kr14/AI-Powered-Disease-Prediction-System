@@ -39,7 +39,7 @@ export default function Predict() {
           className="inline-flex items-center gap-2 text-slate-400 hover:text-indigo-600 transition-colors mb-8 group text-sm font-medium"
         >
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Back to Hub
+          Dashboard
         </Link>
 
     
