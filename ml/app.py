@@ -34,7 +34,7 @@ symptom_index = {symptom: idx for idx, symptom in enumerate(symptoms_list)}
 
 
 class PredictRequest(BaseModel):
-    symptoms: str
+    symptoms:List[str]
 
 
 @app.get("/")
@@ -44,7 +44,8 @@ def health():
 @app.post("/predict")
 def predict(data: PredictRequest):
 
-    symptoms_split = [s.strip().lower() for s in data.symptoms.split(",") if s.strip()]
+    symptoms_split = [s.strip().lower() for s in data.symptoms if s.strip()]
+
     if not symptoms_split:
         return {"error": "No valid symptoms provided"}
 
