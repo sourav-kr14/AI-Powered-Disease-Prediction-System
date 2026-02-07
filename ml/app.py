@@ -34,7 +34,7 @@ symptom_index = {symptom: idx for idx, symptom in enumerate(symptoms_list)}
 
 
 class PredictRequest(BaseModel):
-    symptoms:List[str]
+    symptoms:list[str]
 
 
 @app.get("/")
