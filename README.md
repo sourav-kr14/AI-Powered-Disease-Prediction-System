@@ -21,13 +21,18 @@ A machine-learning based web application that predicts diseases from user-provid
 ## Backend
 - Node.js
 - Express.js
--Python Shell / Child Process for ML execution
+- Python Shell 
 
-## Machine Learning
-- Python
-- NumPy
-- Pandas
-- Scikit-Learn
+## 🧠 Machine Learning Implementation
+
+### 🛠 Model Pipeline
+The system utilizes a **Supervised Learning** approach to classify 40+ diseases based on 130+ unique symptoms.
+
+1. **Preprocessing:** Raw user input is mapped to a binary feature vector using a symptom-index dictionary.
+2. **Algorithm:** A **Random Forest Classifier** was selected due to its robustness against noise and ability to handle the non-linear relationship between symptoms.
+3. **Serialization:** The trained model is exported using `pickle` for real-time inference via the Node.js `child_process`.
+
+> **Note:** The model currently achieves high accuracy on the validation set but is intended for educational and preliminary screening purposes only.
   
 ## APIs
 - Google Places API
@@ -98,7 +103,6 @@ npm run dev
 - Chatbot helps users step-by-step
  ---
 ## 🎯 Future Enhancements
-- Add probability/confidence score
 - Add voice-based symptom input
 - Add doctor appointment booking
 - Add real-time chat with healthcare assistant
