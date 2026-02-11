@@ -79,12 +79,13 @@ export default function DietPlan() {
         
         {/* HEADER */}
         <div className="flex justify-between items-center mb-10 px-2">
-          <Link to="/" className="flex items-center gap-2 text-zinc-400 hover:text-rose-400 transition-all font-bold text-xs group">
-            <div className="p-2 bg-zinc-900 rounded-xl border border-zinc-800 group-hover:border-rose-500/50">
-              <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-            </div>
-            Dashboard
-          </Link>
+          <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-slate-400 hover:text-red-600 transition-colors mb-8 group text-sm font-medium"
+        >
+          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Dashboard
+        </Link>
           <div className="px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded-full flex items-center gap-1.5">
             <Sparkles className="w-3 h-3 text-rose-500" />
             <span className="text-[9px] font-black text-rose-400 uppercase tracking-tighter">Nutrition Suite</span>
