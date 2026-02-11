@@ -95,10 +95,10 @@ export default function ChatBot({ onBack }) {
     addMessage("bot", "Analyzing symptoms against our medical database... 🤖");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/predict", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symptoms: symptoms.join(", ") }),
+        body: JSON.stringify({ symptoms }),
       });
       const data = await res.json();
       setLoading(false);
