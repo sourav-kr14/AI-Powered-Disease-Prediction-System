@@ -7,7 +7,6 @@ const connectDB = require("./config/db");
 
 const app = express();
 
-
 connectDB();
 
 const allowedOrigins = [
@@ -20,7 +19,6 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-   
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -30,6 +28,8 @@ app.use(
     credentials: true,
   })
 );
+
+
 
 
 app.use(express.json());
