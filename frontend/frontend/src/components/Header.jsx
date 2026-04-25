@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Menu, X, Sparkles } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Activity, Menu, X, Sparkles, ArrowRight } from "lucide-react";
 
 const navLinks = [
   { name: "Predict", path: "/predict" },
@@ -17,114 +17,155 @@ export default function Header() {
   const location = useLocation();
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    const handleScroll = () => setIsScrolled(window.scrollY > 16);
+    handleScroll();
+
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
   return (
-    <header className={`fixed top-0 w-full z-50 transition-all duration-500  ${
-      isScrolled ? "py-3" : "py-6"
-    }`}>
-      <div className="max-w-7xl mx-auto px-6">
-        <nav className={`relative flex items-center justify-between px-8 py-3 rounded-[2rem] border transition-all duration-700 ${
-          isScrolled 
-            ? "bg-[#0a0a0a]/60 backdrop-blur-2xl border-white/10 shadow-2xl shadow-indigo-500/10" 
-            : "bg-transparent border-transparent"
-        }`}>
-          
-          {/* LOGO SECTION */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="relative">
-              <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(79,70,229,0.4)] group-hover:scale-110 transition-all duration-500">
-                <Activity className="w-5 h-5 text-white" />
-              </div>
-              <motion.div 
-                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-                transition={{ repeat: Infinity, duration: 3 }}
-                className="absolute inset-0 bg-indigo-500 blur-xl -z-10 rounded-full"
-              />
+    <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 md:px-6">
+      <div className="mx-auto max-w-7xl">
+        <motion.nav
+          initial={false}
+          animate={{
+            paddingTop: isScrolled ? 12 : 18,
+            paddingBottom: isScrolled ? 12 : 18,
+          }}
+          className={`relative flex items-center justify-between rounded-[2rem] border px-5 transition-all duration-500 md:px-7 ${
+            isScrolled
+              ? "border-white/10 bg-[#07111a]/75 shadow-2xl shadow-cyan-950/20 backdrop-blur-2xl"
+              : "border-white/5 bg-white/[0.03] backdrop-blur-xl"
+          }`}
+        >
+          <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-[linear-gradient(120deg,rgba(34,211,238,0.08),transparent_30%,transparent_70%,rgba(251,146,60,0.08))]" />
+
+          <Link to="/" className="relative z-10 flex items-center gap-3">
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200 shadow-[0_0_30px_rgba(34,211,238,0.15)]">
+              <Activity className="h-5 w-5" />
+              <div className="absolute inset-0 rounded-2xl bg-cyan-300/10 blur-xl" />
             </div>
-            <span className="text-xl font-black text-white tracking-tighter italic">
-              SYMPTO<span className="text-indigo-500">SCAN</span>
-            </span>
+
+            <div className="leading-none">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-200">
+                Sympto
+              </p>
+              <h1 className="text-lg font-black tracking-[-0.08em] text-white md:text-xl">
+                SCAN
+              </h1>
+            </div>
           </Link>
 
-          {/* DESKTOP NAV*/}
-          <div className="hidden md:flex items-center gap-9">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`relative text-[10px] font-black uppercase tracking-[0.25em] transition-all duration-300 ${
-                  location.pathname === link.path 
-                    ? "text-white" 
-                    : "text-zinc-500 hover:text-zinc-300"
-                }`}
-              >
-                {link.name}
-                {location.pathname === link.path && (
-                  <motion.div 
-                    layoutId="nav-underline"
-                    className="absolute -bottom-2 left-0 w-full h-[2px] bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.8)]"
-                  />
-                )}
-              </Link>
-            ))}
-          </div>
+          <div className="relative z-10 hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2 py-2 md:flex">
+            {navLinks.map((link) => {
+              const isActive = location.pathname === link.path;
 
-          {/* ACTIONS */}
-          <div className="flex items-center gap-4">
-             <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
-                <Sparkles className="w-3 h-3 text-indigo-400" />
-                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">v2.0 PRO</span>
-             </div>
-             
-             {/* Mobile Toggle */}
-             <button 
-              className="md:hidden p-3 text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-             >
-                {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
-             </button>
-          </div>
-        </nav>
-      </div>
-
-      {/* MOBILE MENU*/}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="absolute top-full left-0 w-full p-6 md:hidden"
-          >
-            <div className="bg-[#0a0a0a]/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col gap-6">
-              {navLinks.map((link, idx) => (
-                <motion.div
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: idx * 0.05 }}
+              return (
+                <Link
                   key={link.path}
+                  to={link.path}
+                  className={`relative rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] transition-colors ${
+                    isActive
+                      ? "text-slate-950"
+                      : "text-slate-300 hover:text-white"
+                  }`}
                 >
-                  <Link
-                    to={link.path}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`text-xs font-black uppercase tracking-[0.2em] block py-2 ${
-                      location.pathname === link.path 
-                        ? "text-indigo-400" 
-                        : "text-zinc-500"
-                    }`}
-                  >
-                    {link.name}
-                  </Link>
-                </motion.div>
-              ))}
+                  {isActive && (
+                    <motion.span
+                      layoutId="active-pill"
+                      className="absolute inset-0 rounded-full bg-cyan-300"
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 30,
+                      }}
+                    />
+                  )}
+                  <span className="relative z-10">{link.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="relative z-10 flex items-center gap-3">
+            <div className="hidden items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 lg:flex">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-200">
+                AI Health Suite
+              </span>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+            <Link
+              to="/predict"
+              className="hidden items-center gap-2 rounded-full bg-white px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-950 transition hover:bg-cyan-200 md:inline-flex"
+            >
+              Get Started
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+
+            <button
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              className="inline-flex rounded-2xl border border-white/10 bg-white/5 p-3 text-white transition hover:bg-white/10 md:hidden"
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+          </div>
+        </motion.nav>
+
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.22 }}
+              className="mt-3 md:hidden"
+            >
+              <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#07111a]/95 p-4 shadow-2xl shadow-cyan-950/20 backdrop-blur-2xl">
+                <div className="space-y-2">
+                  {navLinks.map((link, index) => {
+                    const isActive = location.pathname === link.path;
+
+                    return (
+                      <motion.div
+                        key={link.path}
+                        initial={{ opacity: 0, x: -12 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <Link
+                          to={link.path}
+                          className={`flex items-center justify-between rounded-2xl px-4 py-4 text-sm font-bold uppercase tracking-[0.18em] transition ${
+                            isActive
+                              ? "bg-cyan-300 text-slate-950"
+                              : "bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
+                          }`}
+                        >
+                          {link.name}
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+
+                <Link
+                  to="/predict"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-4 text-xs font-bold uppercase tracking-[0.22em] text-cyan-200"
+                >
+                  Start Health Check
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </header>
   );
 }

@@ -16,7 +16,6 @@ export default function Predict() {
     try {
       let symptomsArray = input;
 
-      // ✅ Convert string to array
       if (typeof input === "string") {
         symptomsArray = input.split(",").map((s) => s.trim().toLowerCase());
       }
