@@ -95,7 +95,7 @@ export default function ChatBot({ onBack }) {
     addMessage("bot", "Analyzing symptoms against our medical database... 🤖");
     setLoading(true);
     try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/predict`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symptoms }),
@@ -169,8 +169,12 @@ export default function ChatBot({ onBack }) {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center py-10 px-4">
       <div className="max-w-xl w-full flex justify-between items-center mb-6 px-2">
-       <Link to="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-purple-600 transition-colors mb-8 group text-sm font-medium">
-          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Dashboard
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-slate-400 hover:text-purple-600 transition-colors mb-8 group text-sm font-medium"
+        >
+          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />{" "}
+          Dashboard
         </Link>
 
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
