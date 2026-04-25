@@ -9,22 +9,33 @@ import NearbyHospitals from "../components/NearbyHospitals";
 export default function Predict() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  const predictDisease = async (symptoms) => {
+  const predictDisease = async (input) => {
     setLoading(true);
     setResult(null);
+
     try {
+      let symptomsArray = input;
+
+      // ✅ Convert string to array
+      if (typeof input === "string") {
+        symptomsArray = input.split(",").map((s) => s.trim().toLowerCase());
+      }
+
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symptoms }),
+        body: JSON.stringify({ symptoms: symptomsArray }),
       });
-      console.log(import.meta.env.VITE_API_URL);
 
       const data = await res.json();
-      setResult(data);
+
+      if (data.success) {
+        setResult(data.data);
+      } else {
+        setResult({ error: data.error });
+      }
     } catch {
-      setResult({ error: "Diagnostic server is currently unreachable." });
+      setResult({ error: "Server unreachable" });
     }
 
     setLoading(false);
@@ -33,7 +44,6 @@ export default function Predict() {
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-slate-950 py-12 px-6">
       <div className="max-w-4xl mx-auto">
-  
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-slate-400 hover:text-indigo-600 transition-colors mb-8 group text-sm font-medium"
@@ -42,7 +52,6 @@ export default function Predict() {
           Dashboard
         </Link>
 
-    
         <header className="mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-200">
@@ -58,12 +67,10 @@ export default function Predict() {
           </p>
         </header>
 
-     }
         <section className="mb-10">
           <InputCard onPredict={predictDisease} />
         </section>
 
-      
         <AnimatePresence mode="wait">
           {loading && (
             <motion.div

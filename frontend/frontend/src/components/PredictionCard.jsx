@@ -9,10 +9,24 @@ import {
 } from "lucide-react";
 
 export default function PredictionCard({ result }) {
-  if (!result || result.error) return null;
+  // 🔹 Loading / Error Handling
+  if (!result) {
+    return (
+      <p className="text-center text-sm text-slate-500">
+        Analyzing symptoms...
+      </p>
+    );
+  }
 
-  const { prediction, top3 } = result;
+  if (result.error) {
+    return <p className="text-center text-sm text-red-500">{result.error}</p>;
+  }
 
+  const { prediction, top3, precautions } = result;
+
+  if (!top3 || top3.length === 0) return null;
+
+  // 🔹 Risk classification
   const getRiskStatus = (confidence) => {
     if (confidence > 0.7)
       return {
@@ -39,15 +53,17 @@ export default function PredictionCard({ result }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl shadow-blue-900/5 border border-slate-100 dark:border-slate-800"
+      className="w-full bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 dark:border-slate-800"
     >
+      {/* HEADER */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200">
+          <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
             <Activity className="w-5 h-5 text-white" />
           </div>
           <h2 className="text-xl font-bold dark:text-white">Analysis Result</h2>
         </div>
+
         <div
           className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1.5 ${primaryRisk.color}`}
         >
@@ -55,57 +71,48 @@ export default function PredictionCard({ result }) {
         </div>
       </div>
 
-      <div className="relative overflow-hidden bg-slate-900 dark:bg-blue-600 p-8 rounded-[2rem] mb-8 text-white shadow-xl shadow-blue-500/20">
-        <div className="relative z-10">
-          <p className="text-blue-200 dark:text-blue-100 text-xs font-bold uppercase tracking-widest mb-1">
-            Potential Diagnosis
-          </p>
-          <h3 className="text-4xl font-black tracking-tight mb-4">
-            {prediction}
-          </h3>
-          <div className="flex items-center gap-2 text-sm font-medium opacity-90">
-            <CheckCircle2 className="w-4 h-4" />
-            AI matches your symptoms with {prediction}
-          </div>
-        </div>
+      {/* MAIN RESULT */}
+      <div className="bg-slate-900 dark:bg-blue-600 p-8 rounded-[2rem] mb-8 text-white">
+        <p className="text-blue-200 text-xs font-bold uppercase mb-1">
+          Potential Diagnosis
+        </p>
 
-        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
+        <h3 className="text-4xl font-black mb-2">{prediction}</h3>
+
+        <p className="text-sm opacity-80 mb-3">
+          Confidence: {(top3[0]?.confidence * 100).toFixed(1)}%
+        </p>
+
+        <div className="flex items-center gap-2 text-sm opacity-90">
+          <CheckCircle2 className="w-4 h-4" />
+          AI matched your symptoms with {prediction}
+        </div>
       </div>
 
+      {/* PROBABILITY SECTION */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter">
-            Probability Distribution
-          </h3>
-          <span className="text-[10px] text-slate-400">Top 3 Candidates</span>
-        </div>
+        <h3 className="text-sm font-bold text-slate-500 uppercase">
+          Top 3 Predictions
+        </h3>
 
         {top3.map((item, index) => {
           const percent = item.confidence * 100;
+
           return (
-            <div
-              key={index}
-              className="group"
-            >
-              <div className="flex justify-between items-end mb-2">
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-blue-600 transition-colors">
+            <div key={index}>
+              <div className="flex justify-between mb-1">
+                <span className="text-sm font-bold dark:text-white">
                   {item.disease}
                 </span>
-                <span className="text-xs font-black text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
-                  {percent.toFixed(1)}%
-                </span>
+                <span className="text-xs">{percent.toFixed(1)}%</span>
               </div>
 
-              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+              <div className="w-full bg-slate-200 rounded-full h-2">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full"
+                  className="h-full bg-blue-500 rounded-full"
                   initial={{ width: 0 }}
                   animate={{ width: `${percent}%` }}
-                  transition={{
-                    duration: 1,
-                    ease: "circOut",
-                    delay: 0.2 + index * 0.1,
-                  }}
+                  transition={{ duration: 1 }}
                 />
               </div>
             </div>
@@ -113,12 +120,35 @@ export default function PredictionCard({ result }) {
         })}
       </div>
 
-      <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex gap-3 items-start border border-slate-100 dark:border-slate-800">
-        <Info className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-        <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed italic">
-          This AI model provides an analysis based on statistical likelihood. It
-          does not replace clinical testing or professional consultation. Please
-          visit the "Nearby Hospitals" section for immediate care.
+      {/* 🔥 PRECAUTIONS (NEW FEATURE) */}
+      {precautions && Object.keys(precautions).length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-sm font-bold text-slate-500 mb-3 uppercase">
+            Recommended Precautions
+          </h3>
+
+          {Object.entries(precautions).map(([disease, tips], idx) => (
+            <div key={idx} className="mb-4">
+              <p className="text-xs font-semibold mb-1 dark:text-white">
+                {disease}
+              </p>
+
+              <ul className="text-xs text-slate-500 list-disc pl-4 space-y-1">
+                {tips.map((tip, i) => (
+                  <li key={i}>{tip}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* DISCLAIMER */}
+      <div className="mt-8 p-4 bg-slate-100 rounded-2xl flex gap-3">
+        <Info className="w-4 h-4 text-slate-400 mt-1" />
+        <p className="text-xs text-slate-500 italic">
+          This AI model provides statistical predictions and does not replace
+          medical advice. Please consult a doctor.
         </p>
       </div>
     </motion.div>
