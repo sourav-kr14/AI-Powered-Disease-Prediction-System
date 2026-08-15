@@ -6,29 +6,36 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
+import warnings
+warnings.filterwarnings("ignore")
 app = FastAPI()
+
+# CORS configuration — configurable via CORS_ORIGINS env var
+# Default: allow all (safe when ML service is only called by backend, not browsers)
+cors_env = os.environ.get("CORS_ORIGINS", "*")
+cors_origins = ["*"] if cors_env == "*" else [o.strip() for o in cors_env.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 base = os.path.dirname(__file__)
 
-# ✅ Load model & encoder
+#  Load model & encoder
 model = joblib.load(os.path.join(base, "model.pkl"))
 encoder = joblib.load(os.path.join(base, "label_encoder.pkl"))
 
-# ✅ Load dataset to get correct features
+#  Load dataset to get correct features
 df = pd.read_csv(os.path.join(base, "DiseaseAndSymptoms.csv"))
 
-# ✅ Correct feature handling
+#  Correct feature handling
 feature_names = model.feature_names_in_
 symptom_index = {s: i for i, s in enumerate(feature_names)}
 
-# ✅ Load precautions
+#  Load precautions
 precaution_df = pd.read_csv(os.path.join(base, "Disease precaution.csv"))
 
 class PredictRequest(BaseModel):
@@ -53,7 +60,7 @@ def predict(data: PredictRequest):
 
     symptoms = [s.strip().lower() for s in data.symptoms if s.strip()]
 
-    # ✅ Correct input vector size (131 features)
+    # Correct input vector size (131 features)
     input_vector = [0] * len(feature_names)
 
     for s in symptoms:
@@ -62,7 +69,7 @@ def predict(data: PredictRequest):
 
     input_array = np.array(input_vector).reshape(1, -1)
 
-    # ✅ Predict
+    #  Predict
     probs = model.predict_proba(input_array)[0]
 
     top3_idx = np.argsort(probs)[::-1][:3]

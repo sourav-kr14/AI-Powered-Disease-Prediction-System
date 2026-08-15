@@ -13,6 +13,16 @@ const PredictionSchema = new mongoose.Schema({
     lat: Number,
     lng: Number,
   },
+  top3Predictions: [
+    {
+      disease: { type: String, required: true },
+      confidence: { type: Number, required: true },
+    }
+  ],
+  precautions: {
+    type: Map,
+    of: [String],
+  },
   createdAt: {
     type: Date,
     default: Date.now,

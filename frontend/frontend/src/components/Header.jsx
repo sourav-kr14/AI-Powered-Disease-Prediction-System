@@ -24,9 +24,6 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 md:px-6">
@@ -141,6 +138,7 @@ export default function Header() {
                       >
                         <Link
                           to={link.path}
+                          onClick={() => setIsMobileMenuOpen(false)}
                           className={`flex items-center justify-between rounded-2xl px-4 py-4 text-sm font-bold uppercase tracking-[0.18em] transition ${
                             isActive
                               ? "bg-cyan-300 text-slate-950"
@@ -157,6 +155,7 @@ export default function Header() {
 
                 <Link
                   to="/predict"
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-4 text-xs font-bold uppercase tracking-[0.22em] text-cyan-200"
                 >
                   Start Health Check

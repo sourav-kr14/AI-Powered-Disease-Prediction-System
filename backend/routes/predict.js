@@ -1,5 +1,6 @@
 const express = require("express");
 const axios = require("axios");
+const mongoose = require("mongoose");
 const Prediction = require("../models/Prediction");
 
 const router = express.Router();
@@ -43,13 +44,17 @@ router.post("/", async (req, res, next) => {
 
     // 🔹 Save to DB (non-blocking safe)
     try {
-      await Prediction.create({
-        symptoms: cleanedSymptoms,
-        predictedDisease: result.prediction,
-        top3Predictions: result.top3,
-        precautions: result.precautions,
-        userLocation: location || null,
-      });
+      if (mongoose.connection.readyState === 1) {
+        await Prediction.create({
+          symptoms: cleanedSymptoms,
+          predictedDisease: result.prediction,
+          top3Predictions: result.top3,
+          precautions: result.precautions,
+          userLocation: location || null,
+        });
+      } else {
+        console.warn("⚠️ DB save skipped: MongoDB is not connected.");
+      }
     } catch (dbError) {
       console.warn("⚠️ DB save failed:", dbError.message);
     }

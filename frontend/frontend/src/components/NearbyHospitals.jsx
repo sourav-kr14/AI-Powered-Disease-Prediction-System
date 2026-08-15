@@ -1,135 +1,247 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
   Navigation,
   Star,
-  Phone,
-  ExternalLink,
   Hospital,
   Loader2,
+  AlertTriangle,
+  LocateFixed,
+  ExternalLink,
 } from "lucide-react";
 
 export default function NearbyHospitals() {
   const [hospitals, setHospitals] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
 
-  useEffect(() => {
+  const fetchHospitals = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported in this browser.");
+      setHasSearched(true);
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setHasSearched(true);
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
 
         try {
-          const res = await axios.post("http://localhost:5000/api/hospitals", {
-            lat,
-            lng,
-          });
-          setHospitals(res.data.results || []);
-        } catch (err) {
-          setError("Unable to connect to the medical directory.");
-          console.error("Hospital fetch error:", err);
+          const res = await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/hospitals`,
+            { lat, lng },
+          );
+
+          setHospitals(res.data?.results || []);
+        } catch (error) {
+          setError(
+            error.response?.data?.message ||
+              "Unable to connect to the medical directory right now.",
+          );
+          setHospitals([]);
         } finally {
           setLoading(false);
         }
       },
       () => {
         setError(
-          "Location access denied. Please enable GPS to find nearby emergency care.",
+          "Location access was denied. Enable location permission to find nearby hospitals.",
         );
+        setHospitals([]);
         setLoading(false);
       },
     );
-  }, []);
+  };
 
   return (
-    <div className="w-full bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl shadow-blue-900/5 border border-slate-100 dark:border-slate-800">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center shadow-lg shadow-rose-200">
-            <Hospital className="w-5 h-5 text-white" />
+    <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 backdrop-blur-2xl">
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="rounded-3xl border border-rose-300/20 bg-rose-400/10 p-4 text-rose-100">
+            <Hospital className="h-6 w-6" />
           </div>
-          <h2 className="text-xl font-bold dark:text-white">
-            Emergency Facilities
-          </h2>
+
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-200">
+              Care Support
+            </p>
+            <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">
+              Nearby hospitals
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
+              Use your location to find nearby medical facilities and open
+              directions in Google Maps when needed.
+            </p>
+          </div>
         </div>
-        {!loading && hospitals.length > 0 && (
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            {hospitals.length} Found Nearby
-          </span>
-        )}
+
+        <button
+          type="button"
+          onClick={fetchHospitals}
+          disabled={loading}
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-300 px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Searching
+            </>
+          ) : (
+            <>
+              <LocateFixed className="h-4 w-4" />
+              Find nearby care
+            </>
+          )}
+        </button>
       </div>
+
+      {!hasSearched && (
+        <div className="rounded-[1.75rem] border border-dashed border-white/10 bg-[#0b1824] p-8 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
+            <MapPin className="h-6 w-6" />
+          </div>
+          <h3 className="text-lg font-bold text-white">
+            Find emergency and nearby medical care
+          </h3>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-slate-400">
+            We only request your location when you choose to search. This helps
+            us show relevant hospitals near your current area.
+          </p>
+        </div>
+      )}
 
       {loading && (
-        <div className="py-20 flex flex-col items-center justify-center">
-          <div className="relative mb-6">
-            <div className="absolute inset-0 bg-rose-400 rounded-full animate-ping opacity-20" />
-            <div className="relative bg-rose-50 p-4 rounded-full">
-              <Navigation className="w-8 h-8 text-rose-500 animate-pulse" />
+        <div className="rounded-[1.75rem] border border-white/10 bg-[#0b1824] py-16 text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-rose-300/20 bg-rose-400/10 text-rose-100">
+            <Loader2 className="h-7 w-7 animate-spin" />
+          </div>
+          <p className="text-sm font-bold uppercase tracking-[0.22em] text-rose-100">
+            Searching nearby facilities
+          </p>
+          <p className="mt-3 text-sm leading-7 text-slate-400">
+            Checking available hospitals around your current location.
+          </p>
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="rounded-[1.75rem] border border-amber-300/20 bg-amber-400/10 p-5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-200" />
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.16em] text-amber-100">
+                Location unavailable
+              </p>
+              <p className="mt-2 text-sm leading-7 text-amber-50/85">{error}</p>
             </div>
           </div>
-          <p className="text-slate-500 font-medium animate-pulse text-sm">
-            Scanning nearby medical facilities...
+        </div>
+      )}
+
+      {!loading && hasSearched && !error && hospitals.length === 0 && (
+        <div className="rounded-[1.75rem] border border-dashed border-white/10 bg-[#0b1824] p-8 text-center">
+          <MapPin className="mx-auto mb-4 h-10 w-10 text-slate-500" />
+          <h3 className="text-lg font-bold text-white">No hospitals found</h3>
+          <p className="mt-3 text-sm leading-7 text-slate-400">
+            We couldn’t find nearby facilities from the current search. Please
+            try again or refine backend location support.
           </p>
         </div>
       )}
 
-      {!loading && (error || hospitals.length === 0) && (
-        <div className="py-12 px-6 text-center bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
-          <MapPin className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-600 dark:text-slate-400 text-sm font-medium italic">
-            {error || "No hospitals found within your immediate vicinity."}
-          </p>
+      {!loading && hospitals.length > 0 && (
+        <div>
+          <div className="mb-5 flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">
+              Search results
+            </p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-200">
+              {hospitals.length} found nearby
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <AnimatePresence>
+              {hospitals.map((hospital, index) => {
+                const lat = hospital?.geometry?.location?.lat;
+                const lng = hospital?.geometry?.location?.lng;
+                const mapsUrl =
+                  lat && lng
+                    ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+                    : null;
+
+                return (
+                  <motion.div
+                    key={`${hospital.name}-${index}`}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.06 }}
+                    className="rounded-[1.75rem] border border-white/10 bg-[#0b1824] p-5 transition hover:border-cyan-300/20 hover:bg-[#102132]"
+                  >
+                    <div className="mb-4 flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-lg font-bold leading-tight text-white">
+                          {hospital.name}
+                        </h3>
+                        <p className="mt-2 flex items-start gap-2 text-sm leading-6 text-slate-400">
+                          <MapPin className="mt-1 h-4 w-4 shrink-0 text-slate-500" />
+                          <span>
+                            {hospital.vicinity || "Address unavailable"}
+                          </span>
+                        </p>
+                      </div>
+
+                      {hospital.rating ? (
+                        <div className="inline-flex items-center gap-1 rounded-full border border-amber-300/20 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-100">
+                          <Star className="h-3.5 w-3.5 fill-current" />
+                          {hospital.rating}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="flex gap-3">
+                      {mapsUrl ? (
+                        <a
+                          href={mapsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200"
+                        >
+                          <Navigation className="h-4 w-4" />
+                          Directions
+                        </a>
+                      ) : (
+                        <div className="inline-flex flex-1 items-center justify-center rounded-2xl bg-white/5 px-4 py-3 text-sm font-bold text-slate-500">
+                          Directions unavailable
+                        </div>
+                      )}
+
+                      {mapsUrl ? (
+                        <a
+                          href={mapsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-slate-300 transition hover:bg-white/10 hover:text-white"
+                          aria-label={`Open ${hospital.name} in maps`}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      ) : null}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
         </div>
       )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <AnimatePresence>
-          {hospitals.map((h, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.05 }}
-              className="group p-5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl hover:border-rose-400 dark:hover:border-rose-500 hover:shadow-xl hover:shadow-rose-900/5 transition-all duration-300"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="font-bold text-slate-800 dark:text-white leading-tight group-hover:text-rose-600 transition-colors">
-                  {h.name}
-                </h3>
-                {h.rating && (
-                  <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-lg text-amber-600 text-xs font-bold">
-                    <Star className="w-3 h-3 fill-current" /> {h.rating}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2 mb-4">
-                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-start gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
-                  {h.vicinity}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${h.geometry.location.lat},${h.geometry.location.lng}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-rose-50 dark:hover:bg-rose-900/30 text-slate-600 dark:text-slate-300 hover:text-rose-600 text-[11px] font-bold rounded-xl transition-all"
-                >
-                  <Navigation className="w-3 h-3" /> Directions
-                </a>
-                <button className="p-2 bg-slate-100 dark:bg-slate-700 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 rounded-xl transition-all">
-                  <Phone className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
     </div>
   );
 }
