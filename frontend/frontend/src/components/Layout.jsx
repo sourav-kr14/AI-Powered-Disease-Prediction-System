@@ -70,6 +70,40 @@ export default function Layout({ children }) {
       .toUpperCase();
   };
 
+  const isAuthPage =
+    location.pathname === "/login" || location.pathname === "/signup";
+
+  if (isAuthPage) {
+    return (
+      <div className="h-screen max-h-screen overflow-hidden flex flex-col justify-between bg-[var(--bg-app)] text-[var(--text-main)] transition-colors duration-150 relative">
+        {/* Floating Theme Toggle (Top-Right) */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20">
+          <button
+            onClick={toggle}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-sub)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)] shadow-xs transition-colors cursor-pointer"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4 text-amber-400" />
+            ) : (
+              <Moon className="h-4 w-4 text-slate-600" />
+            )}
+          </button>
+        </div>
+
+        {/* Main Center Stage (Single-page, no-scroll) */}
+        <main className="flex-1 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+          {children}
+        </main>
+
+        {/* Minimal Footer */}
+        <footer className="py-2.5 text-center text-[11px] text-[var(--text-muted)] shrink-0">
+          <p>© {new Date().getFullYear()} SymptoScan · AI Health Intelligence</p>
+        </footer>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-app)] text-[var(--text-main)] transition-colors duration-150">
       {/* Top Navigation */}
