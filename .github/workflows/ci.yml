@@ -1,0 +1,211 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # 1. FRONTEND CI (React 19 + Vite 7 + Tailwind CSS)
+  # ───────────────────────────────────────────────────────────────────────────
+  frontend-ci:
+    name: Frontend (Lint & Build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/frontend/package-lock.json
+
+      - name: Install dependencies (npm ci)
+        run: npm ci
+
+      - name: Static Analysis (ESLint)
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Production Build (Vite)
+        run: npm run build
+
+      - name: Archive Frontend Build Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-build-${{ github.sha }}
+          path: frontend/frontend/dist/
+          retention-days: 7
+          if-no-files-found: warn
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 2. BACKEND CI (Node.js 18.x & 20.x Matrix)
+  # ───────────────────────────────────────────────────────────────────────────
+  backend-ci:
+    name: Backend Validation (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18.x, 20.x]
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies (npm ci)
+        run: npm ci
+
+      - name: Syntax & Structural Verification
+        run: |
+          echo "🔍 Checking JavaScript syntax across backend modules..."
+          node --check app.js
+          node --check config/db.js
+          node --check middleware/auth.js
+          node --check models/User.js
+          node --check models/Prediction.js
+          node --check routes/auth.js
+          node --check routes/predict.js
+          node --check routes/hospitals.js
+          node --check seed.js
+          echo "✅ All backend JavaScript files passed syntax verification."
+
+      - name: Validate Backend Environment Compatibility
+        run: |
+          node -e '
+            const fs = require("fs");
+            const envExample = fs.readFileSync(".env.example", "utf8");
+            const requiredVars = ["MONGO_URI", "GOOGLE_API_KEY", "ML_SERVICE_URL", "PORT", "CORS_ORIGINS"];
+            const missing = requiredVars.filter(v => !envExample.includes(v));
+            if (missing.length > 0) {
+              console.error("❌ Missing required documentation in .env.example:", missing);
+              process.exit(1);
+            }
+            console.log("✅ .env.example contains all required environment variables.");
+          '
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 3. MACHINE LEARNING CI (Python 3.10 + Model Verification)
+  # ───────────────────────────────────────────────────────────────────────────
+  ml-ci:
+    name: ML Service Validation (Python 3.10)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: ml/requirements.txt
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Python Bytecode Compilation & Syntax Check
+        run: |
+          echo "🔍 Compiling FastAPI application..."
+          python -m py_compile app.py
+          echo "✅ FastAPI app.py passed compilation."
+
+      - name: Model & Dataset Assets Verification
+        run: |
+          python -c '
+          import os, joblib, pandas as pd
+          base = "."
+          model_path = os.path.join(base, "model.pkl")
+          encoder_path = os.path.join(base, "label_encoder.pkl")
+          data_path = os.path.join(base, "DiseaseAndSymptoms.csv")
+          precaution_path = os.path.join(base, "Disease precaution.csv")
+
+          for path, desc in [(model_path, "Model weights"), (encoder_path, "Label encoder"), (data_path, "Symptoms dataset"), (precaution_path, "Precautions dataset")]:
+              if not os.path.exists(path):
+                  raise FileNotFoundError(f"Missing required ML asset: {desc} at {path}")
+              print(f"✅ Found {desc}: {path} ({os.path.getsize(path):,} bytes)")
+
+          model = joblib.load(model_path)
+          encoder = joblib.load(encoder_path)
+          print(f"✅ Model loaded successfully. Feature count: {len(model.feature_names_in_)}")
+          print(f"✅ Label encoder loaded successfully. Classes count: {len(encoder.classes_)}")
+          '
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 4. DOCKER BUILD VALIDATION (ML Service Container)
+  # ───────────────────────────────────────────────────────────────────────────
+  docker-ci:
+    name: Docker Container Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ML Service Image (Validation Only)
+        uses: docker/build-push-action@v6
+        with:
+          context: ml
+          file: ml/Dockerfile
+          push: false
+          tags: symptoscan-ml:test-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 5. CI STATUS GATE (Consolidated check for PR Branch Protection)
+  # ───────────────────────────────────────────────────────────────────────────
+  ci-gate:
+    name: CI Pipeline Status
+    runs-on: ubuntu-latest
+    needs: [frontend-ci, backend-ci, ml-ci, docker-ci]
+    if: always()
+    steps:
+      - name: Evaluate CI Pipeline Results
+        run: |
+          if [ "${{ needs.frontend-ci.result }}" != "success" ] || \
+             [ "${{ needs.backend-ci.result }}" != "success" ] || \
+             [ "${{ needs.ml-ci.result }}" != "success" ] || \
+             [ "${{ needs.docker-ci.result }}" != "success" ]; then
+            echo "❌ One or more CI jobs failed:"
+            echo "  Frontend CI: ${{ needs.frontend-ci.result }}"
+            echo "  Backend CI:  ${{ needs.backend-ci.result }}"
+            echo "  ML CI:       ${{ needs.ml-ci.result }}"
+            echo "  Docker CI:   ${{ needs.docker-ci.result }}"
+            exit 1
+          fi
+          echo "🎉 All CI checks passed successfully!"

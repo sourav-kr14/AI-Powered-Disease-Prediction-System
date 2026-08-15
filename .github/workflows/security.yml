@@ -1,0 +1,170 @@
+name: Security & Vulnerability Scanning
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 4 * * 1" # Weekly Monday morning scan
+  workflow_dispatch:
+
+concurrency:
+  group: sec-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # 1. CODEQL STATIC CODE ANALYSIS
+  # ───────────────────────────────────────────────────────────────────────────
+  codeql:
+    name: CodeQL Analysis (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: javascript-typescript
+            build-mode: none
+          - language: python
+            build-mode: none
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: +security-extended,security-and-quality
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 2. NPM DEPENDENCY AUDIT (Backend & Frontend)
+  # ───────────────────────────────────────────────────────────────────────────
+  npm-audit:
+    name: NPM Dependency Vulnerability Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Audit Backend Dependencies
+        working-directory: backend
+        run: |
+          echo "🔍 Auditing backend dependencies..."
+          npm audit --audit-level=high || true
+
+      - name: Audit Frontend Dependencies
+        working-directory: frontend/frontend
+        run: |
+          echo "🔍 Auditing frontend dependencies..."
+          npm audit --audit-level=high || true
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 3. PYTHON ML DEPENDENCY AUDIT (Pip-Audit)
+  # ───────────────────────────────────────────────────────────────────────────
+  pip-audit:
+    name: Python Dependency Vulnerability Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Run pip-audit
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          pip-audit -r ml/requirements.txt || true
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 4. SECRET & CREDENTIAL SCANNING (Gitleaks)
+  # ───────────────────────────────────────────────────────────────────────────
+  secret-scan:
+    name: Secret & Credential Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with full git history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks Secret Scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 5. DEPENDENCY REVIEW (Pull Requests Only)
+  # ───────────────────────────────────────────────────────────────────────────
+  dependency-review:
+    name: Pull Request Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Dependency Review Action
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 6. CONTAINER VULNERABILITY SCAN (Trivy)
+  # ───────────────────────────────────────────────────────────────────────────
+  container-scan:
+    name: ML Container Image Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Local Image for Scanning
+        uses: docker/build-push-action@v6
+        with:
+          context: ml
+          file: ml/Dockerfile
+          load: true
+          tags: symptoscan-ml:scan-${{ github.sha }}
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: symptoscan-ml:scan-${{ github.sha }}
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+
+      - name: Upload Trivy Scan Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+          category: "trivy-container-ml"

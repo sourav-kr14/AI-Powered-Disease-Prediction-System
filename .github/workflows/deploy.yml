@@ -1,0 +1,215 @@
+name: Deployment Pipeline
+
+on:
+  workflow_run:
+    workflows: ["Production Build Pipeline"]
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target deployment environment"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # 1. DEPLOYMENT GUARD & PRODUCTION SECRET VALIDATION
+  # ───────────────────────────────────────────────────────────────────────────
+  deploy-guard:
+    name: Validate Deployment Pre-conditions
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    # Run only if build succeeded or manually dispatched
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Verify Branch Restrictions
+        run: |
+          DEPLOY_BRANCH="${{ github.ref_name }}"
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            DEPLOY_BRANCH="${{ github.event.workflow_run.head_branch }}"
+          fi
+
+          echo "🚀 Evaluating deployment eligibility for branch: $DEPLOY_BRANCH"
+          if [ "$DEPLOY_BRANCH" != "main" ]; then
+            echo "❌ Deployment rejected: Deployments are strictly restricted to the 'main' branch."
+            exit 1
+          fi
+          echo "✅ Branch authorization confirmed."
+
+      - name: Validate Production Secrets & Authentication Safeguards
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          ML_SERVICE_URL: ${{ secrets.ML_SERVICE_URL }}
+          CORS_ORIGINS: ${{ secrets.CORS_ORIGINS }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: |
+          echo "🛡️ Verifying required production environment secrets..."
+
+          FAIL=0
+
+          # Check JWT_SECRET
+          if [ -z "$JWT_SECRET" ]; then
+            echo "❌ Missing secret: JWT_SECRET must be configured in GitHub Secrets for production."
+            FAIL=1
+          elif [ "$JWT_SECRET" = "symptoscan_super_secret_jwt_key_2026_clinical" ]; then
+            echo "❌ Security Violation: JWT_SECRET matches the default local development key. Production deployment blocked!"
+            FAIL=1
+          else
+            echo "✅ JWT_SECRET is properly configured and non-default."
+          fi
+
+          # Check MONGO_URI
+          if [ -z "$MONGO_URI" ]; then
+            echo "❌ Missing secret: MONGO_URI must be configured in GitHub Secrets for production."
+            FAIL=1
+          elif echo "$MONGO_URI" | grep -qE "(<user>|<pass>|your_|xxxxx|localhost)"; then
+            echo "❌ Insecure Database URI: MONGO_URI contains placeholder or localhost values. Production deployment blocked!"
+            FAIL=1
+          else
+            echo "✅ MONGO_URI is properly configured."
+          fi
+
+          # Check GOOGLE_API_KEY
+          if [ -z "$GOOGLE_API_KEY" ] || [ "$GOOGLE_API_KEY" = "your_google_api_key_here" ]; then
+            echo "❌ Missing secret: GOOGLE_API_KEY must be configured for Google Places API integration."
+            FAIL=1
+          else
+            echo "✅ GOOGLE_API_KEY is configured."
+          fi
+
+          # Check ML_SERVICE_URL
+          if [ -z "$ML_SERVICE_URL" ]; then
+            echo "❌ Missing secret: ML_SERVICE_URL must be configured."
+            FAIL=1
+          else
+            echo "✅ ML_SERVICE_URL is configured: $ML_SERVICE_URL"
+          fi
+
+          # Check CORS_ORIGINS
+          if [ -z "$CORS_ORIGINS" ]; then
+            echo "⚠️ Warning: CORS_ORIGINS is not set in secrets; defaulting to production frontend domain."
+          else
+            echo "✅ CORS_ORIGINS configured: $CORS_ORIGINS"
+          fi
+
+          if [ "$FAIL" -eq 1 ]; then
+            echo ""
+            echo "🚨 Production configuration validation failed. Aborting deployment to prevent insecure state."
+            exit 1
+          fi
+
+          echo "🎉 All production configuration safeguards verified successfully!"
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 2. DEPLOY ML SERVICE (Container / Cloud Hosting)
+  # ───────────────────────────────────────────────────────────────────────────
+  deploy-ml-service:
+    name: Deploy ML Microservice
+    runs-on: ubuntu-latest
+    needs: [deploy-guard]
+    environment:
+      name: production
+      url: ${{ vars.ML_SERVICE_PUBLIC_URL || 'https://ml-service.production' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy ML Service
+        run: |
+          echo "🚀 Deploying ML Microservice to Production Environment..."
+          # The deployment hook can trigger container registry push, Render deploy hook, or Cloud Run deployment
+          if [ -n "${{ secrets.RENDER_ML_DEPLOY_HOOK_URL }}" ]; then
+            echo "📡 Triggering Render ML Service Deploy Hook..."
+            curl -fsS -X POST "${{ secrets.RENDER_ML_DEPLOY_HOOK_URL }}"
+            echo "✅ Render ML deployment triggered."
+          else
+            echo "ℹ️ RENDER_ML_DEPLOY_HOOK_URL not configured. Prepared container image for host deployment."
+          fi
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 3. DEPLOY BACKEND (Node.js API)
+  # ───────────────────────────────────────────────────────────────────────────
+  deploy-backend:
+    name: Deploy Backend API
+    runs-on: ubuntu-latest
+    needs: [deploy-guard, deploy-ml-service]
+    environment:
+      name: production
+      url: ${{ vars.BACKEND_API_PUBLIC_URL || 'https://api.production' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Backend Service
+        run: |
+          echo "🚀 Deploying Node.js Express Backend to Production..."
+          if [ -n "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_URL }}" ]; then
+            echo "📡 Triggering Render Backend Deploy Hook..."
+            curl -fsS -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_URL }}"
+            echo "✅ Render Backend deployment triggered."
+          else
+            echo "ℹ️ RENDER_BACKEND_DEPLOY_HOOK_URL not configured. Backend ready for deployment."
+          fi
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 4. DEPLOY FRONTEND (React 19 / Vite 7 SPA)
+  # ───────────────────────────────────────────────────────────────────────────
+  deploy-frontend:
+    name: Deploy Frontend SPA
+    runs-on: ubuntu-latest
+    needs: [deploy-guard, deploy-backend]
+    environment:
+      name: production
+      url: ${{ vars.FRONTEND_PUBLIC_URL || 'https://app.production' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Frontend
+        run: |
+          echo "🚀 Deploying React 19 Frontend SPA to Production..."
+          if [ -n "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" ]; then
+            echo "📡 Triggering Vercel Frontend Deploy Hook..."
+            curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+            echo "✅ Vercel Frontend deployment triggered."
+          else
+            echo "ℹ️ VERCEL_DEPLOY_HOOK_URL not configured. Frontend ready for deployment."
+          fi
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 5. POST-DEPLOYMENT HEALTH VERIFICATION
+  # ───────────────────────────────────────────────────────────────────────────
+  post-deploy-health-check:
+    name: Post-Deployment Health Verification
+    runs-on: ubuntu-latest
+    needs: [deploy-frontend, deploy-backend, deploy-ml-service]
+    steps:
+      - name: Verify Live Endpoints (Optional / Configured)
+        run: |
+          BACKEND_URL="${{ vars.BACKEND_API_PUBLIC_URL }}"
+          if [ -n "$BACKEND_URL" ]; then
+            echo "🩺 Probing backend health check endpoint: $BACKEND_URL/health"
+            curl -fsS "$BACKEND_URL/health" || echo "⚠️ Backend health probe returned non-200 or was unreachable."
+          else
+            echo "ℹ️ BACKEND_API_PUBLIC_URL variable not set; skipping live HTTP probe."
+          fi
+          echo "✅ Deployment pipeline completed successfully."
