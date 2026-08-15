@@ -1,61 +1,14 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import PageHeader from "../components/PageHeader";
 import {
   Apple,
   Coffee,
   Utensils,
   Moon,
-  Droplets,
-  Lightbulb,
-  ChevronLeft,
-  Target,
-  Scale,
-  Sparkles,
-  ShieldAlert,
-  User,
-  Weight,
-  Ruler,
-  Activity,
-  Flame,
+  RotateCcw,
+  AlertCircle,
+  Clock,
 } from "lucide-react";
-import { Link } from "react-router-dom";
-
-const InputField = ({
-  label,
-  value,
-  onChange,
-  placeholder,
-  unit,
-  icon: Icon,
-}) => (
-  <div className="flex flex-col gap-2">
-    <label className="ml-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
-      {label}
-    </label>
-
-    <div className="group relative">
-      {Icon ? (
-        <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
-          <Icon className="h-4 w-4 text-slate-500 transition-colors group-focus-within:text-cyan-200" />
-        </div>
-      ) : null}
-
-      <input
-        type="number"
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-2xl border border-white/10 bg-[#07111a] py-4 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/40 ${
-          Icon ? "pl-11 pr-14" : "px-4 pr-14"
-        }`}
-      />
-
-      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-[0.15em] text-cyan-200/80">
-        {unit}
-      </span>
-    </div>
-  </div>
-);
 
 export default function DietPlan() {
   const [age, setAge] = useState("");
@@ -65,26 +18,30 @@ export default function DietPlan() {
   const [activity, setActivity] = useState("moderate");
   const [goal, setGoal] = useState("maintain");
   const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
 
-  const calculateDiet = () => {
-    const ageValue = Number(age);
-    const weightValue = Number(weight);
-    const heightValue = Number(height);
+  const calculateDiet = (e) => {
+    e?.preventDefault();
+    setError("");
 
-    if (!ageValue || !weightValue || !heightValue) {
-      setResult({ error: "Please complete all biometric inputs." });
+    const ageVal = Number(age);
+    const weightVal = Number(weight);
+    const heightVal = Number(height);
+
+    if (!ageVal || !weightVal || !heightVal) {
+      setError("Please fill in all your details.");
       return;
     }
 
-    if (ageValue <= 0 || weightValue <= 0 || heightValue <= 0) {
-      setResult({ error: "Please enter valid positive values." });
+    if (ageVal <= 0 || weightVal <= 0 || heightVal <= 0) {
+      setError("Please enter valid positive values.");
       return;
     }
 
     const bmr =
       gender === "male"
-        ? 10 * weightValue + 6.25 * heightValue - 5 * ageValue + 5
-        : 10 * weightValue + 6.25 * heightValue - 5 * ageValue - 161;
+        ? 10 * weightVal + 6.25 * heightVal - 5 * ageVal + 5
+        : 10 * weightVal + 6.25 * heightVal - 5 * ageVal - 161;
 
     const multipliers = {
       sedentary: 1.2,
@@ -103,10 +60,9 @@ export default function DietPlan() {
     const plan = generateDietPlan(goal);
 
     setResult({
-      bmr: Math.round(bmr),
-      tdee: Math.round(tdee),
       calories: Math.round(targetCalories),
       plan,
+      goal,
     });
   };
 
@@ -115,428 +71,286 @@ export default function DietPlan() {
       loss: [
         {
           time: "Breakfast",
-          meal: "Oats with berries and 2 egg whites",
-          note: "High fiber start with lighter calories",
-          icon: <Coffee className="h-5 w-5" />,
-          color: "text-sky-200",
-          accent: "border-sky-300/20 bg-sky-400/10",
+          meal: "Oatmeal with fresh berries & boiled eggs",
+          note: "High fiber and lean protein to keep you full and energized throughout the morning.",
+          icon: Coffee,
         },
         {
           time: "Lunch",
-          meal: "Grilled chicken or paneer salad",
-          note: "Lean protein with volume-rich vegetables",
-          icon: <Utensils className="h-5 w-5" />,
-          color: "text-emerald-200",
-          accent: "border-emerald-300/20 bg-emerald-400/10",
+          meal: "Grilled chicken or paneer bowl with mixed green salad",
+          note: "Nutrient-dense with plenty of fresh vegetables and clean protein.",
+          icon: Utensils,
         },
         {
-          time: "Snack",
-          meal: "Greek yogurt or a handful of almonds",
-          note: "Satiety support between meals",
-          icon: <Apple className="h-5 w-5" />,
-          color: "text-rose-200",
-          accent: "border-rose-300/20 bg-rose-400/10",
+          time: "Afternoon Snack",
+          meal: "Greek yogurt or a small handful of raw almonds",
+          note: "Helps prevent late-day cravings with healthy fats and protein.",
+          icon: Apple,
         },
         {
           time: "Dinner",
-          meal: "Baked tofu with steamed broccoli",
-          note: "Lower calorie evening meal",
-          icon: <Moon className="h-5 w-5" />,
-          color: "text-indigo-200",
-          accent: "border-indigo-300/20 bg-indigo-400/10",
+          meal: "Steamed fish or baked tofu with roasted broccoli",
+          note: "Light, easily digestible evening meal that supports overnight recovery.",
+          icon: Moon,
         },
       ],
       gain: [
         {
           time: "Breakfast",
-          meal: "Banana peanut butter toast and milk",
-          note: "Energy-dense start to support surplus",
-          icon: <Coffee className="h-5 w-5" />,
-          color: "text-orange-200",
-          accent: "border-orange-300/20 bg-orange-400/10",
+          meal: "Whole wheat toast with peanut butter & banana smoothie",
+          note: "Rich in healthy complex carbs and natural fats for clean calorie surplus.",
+          icon: Coffee,
         },
         {
           time: "Lunch",
-          meal: "Brown rice, dal, and mixed vegetables",
-          note: "Balanced carb and protein base",
-          icon: <Utensils className="h-5 w-5" />,
-          color: "text-emerald-200",
-          accent: "border-emerald-300/20 bg-emerald-400/10",
+          meal: "Brown rice, lentil dal, and grilled protein serving",
+          note: "Solid energy-dense meal providing balanced carbs and sustained energy.",
+          icon: Utensils,
         },
         {
-          time: "Snack",
-          meal: "Protein shake and dried fruits",
-          note: "Convenient surplus support",
-          icon: <Apple className="h-5 w-5" />,
-          color: "text-rose-200",
-          accent: "border-rose-300/20 bg-rose-400/10",
+          time: "Afternoon Snack",
+          meal: "Protein shake with walnuts, dates, or oats",
+          note: "Quick and convenient way to hit your daily calorie surplus target.",
+          icon: Apple,
         },
         {
           time: "Dinner",
-          meal: "Sweet potato and lean protein",
-          note: "Recovery-friendly evening meal",
-          icon: <Moon className="h-5 w-5" />,
-          color: "text-indigo-200",
-          accent: "border-indigo-300/20 bg-indigo-400/10",
+          meal: "Roasted sweet potatoes, quinoa, and lean chicken or paneer",
+          note: "Nutrient-rich dinner promoting muscle recovery and glycogen replenishment.",
+          icon: Moon,
         },
       ],
       maintain: [
         {
           time: "Breakfast",
-          meal: "Scrambled eggs on whole wheat toast",
-          note: "Simple protein-forward breakfast",
-          icon: <Coffee className="h-5 w-5" />,
-          color: "text-sky-200",
-          accent: "border-sky-300/20 bg-sky-400/10",
+          meal: "Scrambled eggs on whole grain sourdough with avocado",
+          note: "Balanced start with quality fats, complex carbohydrates, and protein.",
+          icon: Coffee,
         },
         {
           time: "Lunch",
-          meal: "Lentil soup with rice and salad",
-          note: "Balanced midday meal",
-          icon: <Utensils className="h-5 w-5" />,
-          color: "text-emerald-200",
-          accent: "border-emerald-300/20 bg-emerald-400/10",
+          meal: "Mediterranean grain bowl with chickpeas, vegetables, and chicken",
+          note: "Full of colorful micronutrients, clean carbs, and fiber.",
+          icon: Utensils,
         },
         {
-          time: "Snack",
-          meal: "Apple with peanut butter",
-          note: "Steady energy with healthy fats",
-          icon: <Apple className="h-5 w-5" />,
-          color: "text-rose-200",
-          accent: "border-rose-300/20 bg-rose-400/10",
+          time: "Afternoon Snack",
+          meal: "Fresh apple slices with natural peanut or almond butter",
+          note: "Satisfying snack for sustained midday focus and energy.",
+          icon: Apple,
         },
         {
           time: "Dinner",
-          meal: "Grilled protein with vegetables",
-          note: "Simple evening maintenance meal",
-          icon: <Moon className="h-5 w-5" />,
-          color: "text-indigo-200",
-          accent: "border-indigo-300/20 bg-indigo-400/10",
+          meal: "Grilled salmon or paneer with grilled asparagus and brown rice",
+          note: "Heart-healthy dinner rich in omega-3 fatty acids and essential minerals.",
+          icon: Moon,
         },
       ],
     };
 
-    return plans[goalType];
+    return plans[goalType] || plans.maintain;
+  };
+
+  const handleReset = () => {
+    setAge("");
+    setWeight("");
+    setHeight("");
+    setResult(null);
+    setError("");
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#07111a] px-6 py-12 text-white">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.16),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(249,115,22,0.12),_transparent_28%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:72px_72px] opacity-20" />
-      </div>
+    <div className="space-y-8 max-w-4xl mx-auto">
+      <PageHeader
+        badge="Meal Planning"
+        title="Personalized Diet Planner"
+        description="Get a balanced, structured daily meal schedule customized for your fitness and body weight goals."
+      />
 
-      <div className="relative mx-auto max-w-6xl">
-        <div className="mb-8 flex items-center justify-between">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition hover:text-cyan-200"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back to dashboard
-          </Link>
+      <div className="grid gap-6 md:grid-cols-12 items-start">
+        {/* Form */}
+        <div className="md:col-span-5 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-6 shadow-sm space-y-4">
+          <h2 className="text-base font-bold text-[var(--text-main)] flex items-center gap-2">
+            <Apple className="h-4 w-4 text-[var(--primary)]" />
+            <span>Your Profile</span>
+          </h2>
 
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-200">
-            <Sparkles className="h-4 w-4" />
-            Nutrition Planner
-          </div>
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 backdrop-blur-2xl"
-          >
-            <div className="mb-6 flex items-start gap-4">
-              <div className="rounded-3xl border border-rose-300/20 bg-rose-400/10 p-4 text-rose-200">
-                <Apple className="h-7 w-7" />
-              </div>
-
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-200">
-                  Diet Planner
-                </p>
-                <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] text-white md:text-5xl">
-                  Build a practical daily meal plan
-                </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-                  Estimate calorie targets from your body metrics and generate a
-                  simple meal timeline aligned with fat loss, maintenance, or
-                  muscle gain.
-                </p>
-              </div>
+          {error && (
+            <div className="flex items-center gap-2 rounded-xl border border-[var(--danger)] bg-[var(--danger-light)] p-3 text-xs text-[var(--danger)]">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
             </div>
+          )}
 
-            <div className="mb-8 rounded-[1.75rem] border border-amber-300/20 bg-amber-400/10 p-5">
-              <div className="flex items-start gap-3">
-                <ShieldAlert className="mt-0.5 h-5 w-5 text-amber-200" />
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-amber-100">
-                    Important note
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-amber-50/85">
-                    This is a general planning tool, not a clinical nutrition
-                    prescription. Food preferences, allergies, diabetes,
-                    digestive issues, and other medical needs should be handled
-                    with professional guidance.
-                  </p>
-                </div>
+          <form onSubmit={calculateDiet} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[var(--text-sub)]">
+                  Age
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="120"
+                  placeholder="25"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-main)] outline-none focus:border-[var(--primary)] focus:bg-[var(--bg-surface)]"
+                />
               </div>
-            </div>
 
-            <div className="grid gap-5 md:grid-cols-2">
-              <InputField
-                label="Age"
-                value={age}
-                onChange={setAge}
-                placeholder="24"
-                unit="yrs"
-                icon={User}
-              />
-
-              <div className="flex flex-col gap-2">
-                <label className="ml-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[var(--text-sub)]">
                   Gender
                 </label>
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-[#07111a] px-4 py-4 text-sm text-white outline-none transition focus:border-cyan-300/40"
+                  className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-main)] outline-none focus:border-[var(--primary)] focus:bg-[var(--bg-surface)]"
                 >
                   <option value="male">Male</option>
                   <option value="female">Female</option>
                 </select>
               </div>
-
-              <InputField
-                label="Weight"
-                value={weight}
-                onChange={setWeight}
-                placeholder="70"
-                unit="kg"
-                icon={Weight}
-              />
-
-              <InputField
-                label="Height"
-                value={height}
-                onChange={setHeight}
-                placeholder="175"
-                unit="cm"
-                icon={Ruler}
-              />
             </div>
 
-            <div className="mt-5 flex flex-col gap-2">
-              <label className="ml-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
-                Activity level
-              </label>
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
-                  <Activity className="h-4 w-4 text-slate-500" />
-                </div>
-                <select
-                  value={activity}
-                  onChange={(e) => setActivity(e.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-[#07111a] py-4 pl-11 pr-4 text-sm text-white outline-none transition focus:border-cyan-300/40"
-                >
-                  <option value="sedentary">Sedentary</option>
-                  <option value="light">Lightly active</option>
-                  <option value="moderate">Moderate</option>
-                  <option value="active">Active</option>
-                  <option value="intense">Intense</option>
-                </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[var(--text-sub)]">
+                  Weight (kg)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="350"
+                  placeholder="70"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-main)] outline-none focus:border-[var(--primary)] focus:bg-[var(--bg-surface)]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[var(--text-sub)]">
+                  Height (cm)
+                </label>
+                <input
+                  type="number"
+                  min="30"
+                  max="250"
+                  placeholder="175"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-main)] outline-none focus:border-[var(--primary)] focus:bg-[var(--bg-surface)]"
+                />
               </div>
             </div>
 
-            <div className="mt-5 flex flex-col gap-2">
-              <label className="ml-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
-                Fitness goal
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-[var(--text-sub)]">
+                Daily Activity
               </label>
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
-                  <Target className="h-4 w-4 text-slate-500" />
-                </div>
-                <select
-                  value={goal}
-                  onChange={(e) => setGoal(e.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-[#07111a] py-4 pl-11 pr-4 text-sm text-white outline-none transition focus:border-cyan-300/40"
-                >
-                  <option value="maintain">Maintain</option>
-                  <option value="loss">Weight loss</option>
-                  <option value="gain">Muscle gain</option>
-                </select>
-              </div>
+              <select
+                value={activity}
+                onChange={(e) => setActivity(e.target.value)}
+                className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-main)] outline-none focus:border-[var(--primary)] focus:bg-[var(--bg-surface)]"
+              >
+                <option value="sedentary">Sedentary (Desk job, little exercise)</option>
+                <option value="light">Lightly Active (1–3 days/week)</option>
+                <option value="moderate">Moderately Active (3–5 days/week)</option>
+                <option value="active">Very Active (6–7 days/week)</option>
+              </select>
             </div>
 
-            <button
-              onClick={calculateDiet}
-              className="mt-8 inline-flex w-full items-center justify-center gap-3 rounded-full bg-cyan-300 px-6 py-5 text-sm font-bold uppercase tracking-[0.2em] text-slate-950 transition hover:bg-cyan-200"
-            >
-              Generate plan
-              <Flame className="h-4 w-4" />
-            </button>
-          </motion.div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-[var(--text-sub)]">
+                Primary Goal
+              </label>
+              <select
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-main)] outline-none focus:border-[var(--primary)] focus:bg-[var(--bg-surface)]"
+              >
+                <option value="maintain">Maintain Weight</option>
+                <option value="loss">Healthy Fat Loss</option>
+                <option value="gain">Build Muscle / Gain Weight</option>
+              </select>
+            </div>
 
-          <div>
-            <AnimatePresence mode="wait">
-              {result ? (
-                <motion.div
-                  key="result"
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-6"
+            <div className="pt-2 flex gap-2">
+              <button
+                type="submit"
+                className="flex-1 rounded-xl bg-[var(--primary)] py-3 text-sm font-bold text-white hover:bg-[var(--primary-hover)] transition-all shadow-sm"
+              >
+                Create Meal Plan
+              </button>
+              {result && (
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-subtle)] px-3 text-[var(--text-sub)] hover:bg-[var(--bg-surface-hover)]"
+                  aria-label="Reset"
                 >
-                  {result.error ? (
-                    <div className="rounded-[2rem] border border-rose-300/20 bg-rose-400/10 p-6">
-                      <p className="text-sm font-medium text-rose-100">
-                        {result.error}
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <div className="rounded-[1.75rem] border border-rose-300/20 bg-rose-400/10 p-5">
-                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">
-                            Target intake
-                          </p>
-                          <p className="mt-3 text-3xl font-black text-rose-200">
-                            {result.calories}
-                          </p>
-                          <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-slate-400">
-                            kcal / day
-                          </p>
-                        </div>
-
-                        <div className="rounded-[1.75rem] border border-emerald-300/20 bg-emerald-400/10 p-5">
-                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">
-                            BMR value
-                          </p>
-                          <div className="mt-3 flex items-center gap-2 text-emerald-200">
-                            <Scale className="h-5 w-5" />
-                            <span className="text-2xl font-black">
-                              {result.bmr}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="rounded-[1.75rem] border border-sky-300/20 bg-sky-400/10 p-5">
-                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">
-                            Protocol
-                          </p>
-                          <div className="mt-3 flex items-center gap-2 text-sky-200">
-                            <Target className="h-5 w-5" />
-                            <span className="text-2xl font-black capitalize">
-                              {goal}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 backdrop-blur-2xl">
-                        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                          <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">
-                              Meal timeline
-                            </p>
-                            <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-white">
-                              Suggested daily structure
-                            </h2>
-                          </div>
-
-                          <div className="rounded-full border border-white/10 bg-[#0b1824] px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-300">
-                            TDEE: {result.tdee} kcal
-                          </div>
-                        </div>
-
-                        <div className="space-y-5">
-                          {result.plan.map((item, index) => (
-                            <motion.div
-                              key={`${item.time}-${index}`}
-                              initial={{ opacity: 0, x: -12 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.08 }}
-                              className="flex gap-4 rounded-[1.75rem] border border-white/10 bg-[#0b1824] p-5"
-                            >
-                              <div
-                                className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border ${item.accent} ${item.color}`}
-                              >
-                                {item.icon}
-                              </div>
-
-                              <div>
-                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-200">
-                                  {item.time}
-                                </p>
-                                <h3 className="mt-2 text-lg font-bold text-white">
-                                  {item.meal}
-                                </h3>
-                                <p className="mt-2 text-sm leading-7 text-slate-400">
-                                  {item.note}
-                                </p>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="rounded-[1.75rem] border border-sky-300/20 bg-sky-400/10 p-5">
-                          <div className="flex items-start gap-3">
-                            <Droplets className="mt-0.5 h-5 w-5 text-sky-200" />
-                            <div>
-                              <p className="text-sm font-bold uppercase tracking-[0.16em] text-sky-100">
-                                Hydration reminder
-                              </p>
-                              <p className="mt-2 text-sm leading-7 text-sky-50/85">
-                                Aim for steady water intake through the day.
-                                Around 2.5L to 3.5L may be reasonable depending
-                                on body size, climate, and training level.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="rounded-[1.75rem] border border-amber-300/20 bg-amber-400/10 p-5">
-                          <div className="flex items-start gap-3">
-                            <Lightbulb className="mt-0.5 h-5 w-5 text-amber-200" />
-                            <div>
-                              <p className="text-sm font-bold uppercase tracking-[0.16em] text-amber-100">
-                                Planning insight
-                              </p>
-                              <p className="mt-2 text-sm leading-7 text-amber-50/85">
-                                Consistency matters more than perfection.
-                                Keeping meal timing, protein intake, and total
-                                calories reasonably stable usually works better
-                                than frequent drastic changes.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="empty"
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex min-h-[520px] flex-col items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-white/[0.03] p-10 text-center"
-                >
-                  <Apple className="mb-5 h-14 w-14 text-slate-500" />
-                  <p className="text-sm font-bold uppercase tracking-[0.22em] text-slate-400">
-                    Awaiting biometric data
-                  </p>
-                  <p className="mt-3 max-w-md text-sm leading-7 text-slate-500">
-                    Enter your body metrics, activity level, and goal to
-                    generate a practical day structure for your diet.
-                  </p>
-                </motion.div>
+                  <RotateCcw className="h-4 w-4" />
+                </button>
               )}
-            </AnimatePresence>
-          </div>
+            </div>
+          </form>
+        </div>
+
+        {/* Meal Timeline */}
+        <div className="md:col-span-7 space-y-4">
+          {result ? (
+            <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-6 shadow-sm space-y-6">
+              <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-4">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                    Target Daily Energy
+                  </span>
+                  <p className="text-2xl font-extrabold text-[var(--primary)] mt-0.5">
+                    {result.calories} <span className="text-xs font-normal text-[var(--text-sub)]">kcal/day</span>
+                  </p>
+                </div>
+                <span className="rounded-full bg-[var(--primary-light)] text-[var(--primary)] px-3 py-1 text-xs font-bold capitalize">
+                  {result.goal === "loss" ? "Fat Loss Plan" : result.goal === "gain" ? "Muscle Gain Plan" : "Maintenance Plan"}
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {result.plan.map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-subtle)] p-4"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--primary)] mt-0.5">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                          {item.time}
+                        </span>
+                        <h4 className="text-sm font-bold text-[var(--text-main)]">
+                          {item.meal}
+                        </h4>
+                        <p className="text-xs text-[var(--text-sub)] leading-relaxed">
+                          {item.note}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] p-8 text-center text-xs text-[var(--text-muted)] space-y-1">
+              <p className="font-semibold text-[var(--text-main)]">
+                Awaiting your profile
+              </p>
+              <p>Fill out the form on the left to see your personalized daily meal timeline.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

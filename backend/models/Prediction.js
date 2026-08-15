@@ -13,6 +13,15 @@ const PredictionSchema = new mongoose.Schema({
     lat: Number,
     lng: Number,
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
+  },
+  userName: {
+    type: String,
+    default: "",
+  },
   top3Predictions: [
     {
       disease: { type: String, required: true },

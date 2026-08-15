@@ -1,1 +1,100 @@
 @import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SymptoScan — Red & White Clinical Health Theme (Clean, Trustworthy, Modern)
+   Inspired by Red Cross, Mayo Clinic & modern digital healthcare.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --bg-app: #fafafa;
+  --bg-surface: #ffffff;
+  --bg-surface-subtle: #f8fafc;
+  --bg-surface-hover: #f1f5f9;
+
+  --border-color: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --border-focus: #e11d48;
+
+  --text-main: #0f172a;
+  --text-sub: #475569;
+  --text-muted: #94a3b8;
+
+  /* Clinical Red / Crimson Brand */
+  --primary: #e11d48;
+  --primary-hover: #be123c;
+  --primary-light: #fff1f2;
+  --primary-text: #be123c;
+
+  --success: #10b981;
+  --success-light: #ecfdf5;
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --danger: #e11d48;
+  --danger-light: #fff1f2;
+
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+}
+
+.dark {
+  --bg-app: #0c0a0b;
+  --bg-surface: #141113;
+  --bg-surface-subtle: #1c181b;
+  --bg-surface-hover: #262024;
+
+  --border-color: #2b2327;
+  --border-subtle: #1f191d;
+  --border-focus: #fb7185;
+
+  --text-main: #f8fafc;
+  --text-sub: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Dark Crimson */
+  --primary: #f43f5e;
+  --primary-hover: #fb7185;
+  --primary-light: #4c051938;
+  --primary-text: #fda4af;
+
+  --success: #10b981;
+  --success-light: #064e3b33;
+  --warning: #f59e0b;
+  --warning-light: #78350f33;
+  --danger: #f43f5e;
+  --danger-light: #4c051938;
+
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}

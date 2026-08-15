@@ -1,42 +1,38 @@
-import React, { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import PageHeader from "../components/PageHeader";
 import {
   Send,
-  RefreshCcw,
-  FileText,
+  RotateCcw,
+  Download,
   Bot,
   User,
-  CheckCircle2,
-  ChevronLeft,
-  LayoutDashboard,
-  Sparkles,
-  ShieldAlert,
+  CheckCircle,
   Loader2,
-  MessageSquareHeart,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-import { Link } from "react-router-dom";
 
 const QUESTIONS = [
-  "Are you currently running a fever?",
-  "Are you experiencing any nausea or dizziness?",
-  "Do you feel unusually fatigued or tired?",
-  "Are you noticing any joint or muscle pain?",
+  "Do you have a fever or high temperature?",
+  "Are you experiencing any nausea, dizziness, or stomach upset?",
+  "Do you feel unusually tired or fatigued?",
+  "Are you having any joint, muscle, or body aches?",
   "Have you experienced any vomiting?",
-  "Do you have a persistent cough?",
-  "Have you noticed any recent unexplained weight loss?",
+  "Do you have a cough or sore throat?",
+  "Have you noticed any unexplained weight loss recently?",
 ];
 
 export default function ChatBot() {
+  const { token } = useAuth();
   const [messages, setMessages] = useState([
     {
       sender: "bot",
-      text: "Hello. I’m your AI medical assistant. I can help you organize symptoms and generate a guided health summary.",
+      text: "Hi there! I'm your AI health assistant. I can guide you through a few quick questions to help identify possible health conditions.",
     },
     {
       sender: "bot",
-      text: "To begin, type your main symptom in one or two words.",
+      text: "To start, what is the main symptom you are feeling today? (e.g. fever, headache, stomach pain)",
     },
   ]);
   const [input, setInput] = useState("");
@@ -57,13 +53,11 @@ export default function ChatBot() {
 
   const extractSymptomFromQuestion = (question) => {
     return question
-      .replace(
-        /Are you |Do you |Have you |any |currently |experienced |noticed |recent |running a |persistent /gi,
-        "",
-      )
+      .replace(/Do you have |Are you experiencing |Do you feel |Are you having |Have you experienced |Have you noticed |any |a |recently\?/gi, "")
       .replace("?", "")
       .trim()
-      .toLowerCase();
+      .toLowerCase()
+      .replace(/\s+/g, "_");
   };
 
   const askNextQuestion = () => {
@@ -71,50 +65,43 @@ export default function ChatBot() {
       finalizeDiagnosis();
       return;
     }
-
     addMessage("bot", QUESTIONS[questionIndex]);
     setQuestionIndex((prev) => prev + 1);
   };
 
   const finalizeDiagnosis = async () => {
     setLoading(true);
-    addMessage(
-      "bot",
-      "Analyzing your responses and checking likely matches against the medical model...",
-    );
+    addMessage("bot", "Analyzing your answers to find the best match...");
 
     try {
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/predict`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({ symptoms }),
       });
 
       if (!res.ok) {
-        throw new Error("Prediction request failed");
+        throw new Error("Server error");
       }
 
       const data = await res.json();
       const payload = data?.data || data;
 
       if (data?.error || !payload?.prediction) {
-        addMessage(
-          "bot",
-          `I couldn't complete the analysis right now${data?.error ? `: ${data.error}` : "."}`,
-        );
+        addMessage("bot", "I wasn't able to complete the check. Please try starting over with clear symptoms.");
         return;
       }
 
       addMessage(
         "bot",
-        `The most likely match from the current symptom pattern is ${payload.prediction}. Please interpret this cautiously.`,
-      );
-
-      addMessage(
-        "bot",
-        "Your clinical summary is ready below. This is informational only and should not replace a doctor's evaluation.",
+        `Based on your answers, the most likely condition is ${payload.prediction}. I've prepared a health summary for you below.`,
       );
 
       setSummary({
@@ -122,67 +109,67 @@ export default function ChatBot() {
         prediction: payload.prediction,
         top3: payload.top3 || [],
         precautions: payload.precautions || {},
-        time: new Date().toLocaleString(),
-        id: `REF-${Math.floor(Math.random() * 90000) + 10000}`,
+        time: new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+        }),
+        id: `REPORT-${Math.floor(Math.random() * 90000) + 10000}`,
       });
     } catch {
-      addMessage(
-        "bot",
-        "I’m having trouble connecting to the diagnostic server right now. Please try again in a moment.",
-      );
+      addMessage("bot", "I'm having trouble reaching the prediction server. Please try again in a moment.");
     } finally {
       setLoading(false);
     }
   };
 
   const processUserMessage = (text) => {
-    const lowerText = text.trim().toLowerCase();
+    const lower = text.trim().toLowerCase();
 
     if (!symptoms.length) {
-      setSymptoms([lowerText]);
-      addMessage(
-        "bot",
-        "Noted. I’ll ask a few quick yes-or-no questions to refine the result.",
-      );
-      setTimeout(() => askNextQuestion(), 700);
+      const clean = lower.replace(/\s+/g, "_");
+      setSymptoms([clean]);
+      addMessage("bot", "Got it. Let me ask a few quick follow-up questions.");
+      setTimeout(() => askNextQuestion(), 500);
       return;
     }
 
-    if (lowerText === "yes" || lowerText === "y") {
+    if (lower === "yes" || lower === "y") {
       const previousQuestion = QUESTIONS[questionIndex - 1];
       if (previousQuestion) {
-        const derivedSymptom = extractSymptomFromQuestion(previousQuestion);
-        setSymptoms((prev) => [...prev, derivedSymptom]);
+        const derived = extractSymptomFromQuestion(previousQuestion);
+        setSymptoms((prev) => [...prev, derived]);
       }
     }
 
     if (questionIndex < QUESTIONS.length) {
-      setTimeout(() => askNextQuestion(), 500);
+      setTimeout(() => askNextQuestion(), 400);
     } else {
       finalizeDiagnosis();
     }
   };
 
-  const sendMessage = () => {
-    if (!input.trim() || loading) return;
+  const handleSend = (textToSend) => {
+    const msg = textToSend || input;
+    if (!msg.trim() || loading) return;
 
-    const userText = input.trim();
-
-    if (userText.toLowerCase() === "restart") {
+    if (msg.trim().toLowerCase() === "restart") {
       resetChat();
       return;
     }
 
-    addMessage("user", userText);
+    addMessage("user", msg.trim());
     setInput("");
-    processUserMessage(userText);
+    processUserMessage(msg.trim());
   };
 
   const resetChat = () => {
     setMessages([
       {
         sender: "bot",
-        text: "Session reset. Tell me your main symptom and we’ll begin again.",
+        text: "Conversation reset! What is your main symptom today?",
       },
     ]);
     setInput("");
@@ -193,7 +180,7 @@ export default function ChatBot() {
   };
 
   const exportPDF = async () => {
-    const element = document.getElementById("summary-card");
+    const element = document.getElementById("chat-summary-report");
     if (!element) return;
 
     const canvas = await html2canvas(element, { scale: 2 });
@@ -203,315 +190,228 @@ export default function ChatBot() {
     const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
     pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, imgHeight);
-    pdf.save(`Medical-Report-${summary.id}.pdf`);
+    pdf.save(`Health-Summary-${summary.id}.pdf`);
   };
 
+  const isQuestionActive =
+    symptoms.length > 0 && questionIndex > 0 && questionIndex <= QUESTIONS.length;
+
   return (
-    <div className="min-h-screen overflow-hidden bg-[#07111a] px-4 py-10 text-white">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.16),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(249,115,22,0.12),_transparent_28%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:72px_72px] opacity-20" />
-      </div>
+    <div className="space-y-8 max-w-4xl mx-auto">
+      <PageHeader
+        badge="Interactive AI"
+        title="Health Assistant"
+        description="Chat with our guided assistant to narrow down your symptoms and generate a shareable health report."
+      />
 
-      <div className="relative mx-auto max-w-6xl">
-        <div className="mb-8 flex items-center justify-between">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition hover:text-cyan-200"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back to dashboard
-          </Link>
-
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-200">
-            <Sparkles className="h-4 w-4" />
-            AI Symptom Chat
-          </div>
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] backdrop-blur-2xl"
-          >
-            <div className="border-b border-white/10 bg-[#0b1824] p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="rounded-3xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-cyan-200">
-                    <Bot className="h-6 w-6" />
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-200">
-                      Medical Assistant
-                    </p>
-                    <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">
-                      Guided symptom conversation
-                    </h1>
-                    <p className="mt-2 text-sm leading-7 text-slate-400">
-                      Answer a short sequence of prompts to generate a
-                      structured AI health summary.
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={resetChat}
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-3 text-slate-300 transition hover:bg-white/10 hover:text-white"
-                  title="Restart chat"
-                >
-                  <RefreshCcw className="h-4 w-4" />
-                </button>
-              </div>
+      {/* Chat Window */}
+      <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] shadow-sm overflow-hidden flex flex-col h-[560px]">
+        {/* Chat Top bar */}
+        <div className="flex items-center justify-between border-b border-[var(--border-color)] bg-[var(--bg-surface-subtle)] px-6 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--primary)] text-white">
+              <Bot className="h-4 w-4" />
             </div>
-
-            <div
-              className="space-y-5 overflow-y-auto p-6"
-              style={{ height: "58vh" }}
-            >
-              <AnimatePresence initial={false}>
-                {messages.map((msg, index) => (
-                  <motion.div
-                    key={`${msg.sender}-${index}`}
-                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    className={`flex items-start gap-3 ${
-                      msg.sender === "user" ? "flex-row-reverse" : ""
-                    }`}
-                  >
-                    <div
-                      className={`shrink-0 rounded-full p-2.5 ${
-                        msg.sender === "user"
-                          ? "bg-cyan-300 text-slate-950"
-                          : "border border-white/10 bg-white/5 text-cyan-200"
-                      }`}
-                    >
-                      {msg.sender === "user" ? (
-                        <User className="h-4 w-4" />
-                      ) : (
-                        <Bot className="h-4 w-4" />
-                      )}
-                    </div>
-
-                    <div
-                      className={`max-w-[82%] rounded-3xl px-4 py-4 text-sm leading-7 shadow-sm ${
-                        msg.sender === "user"
-                          ? "rounded-tr-none bg-cyan-300 text-slate-950"
-                          : "rounded-tl-none border border-white/10 bg-[#0b1824] text-slate-200"
-                      }`}
-                    >
-                      {msg.text}
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-
-              {loading && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center gap-3 rounded-3xl border border-white/10 bg-[#0b1824] px-4 py-4 text-sm text-slate-300"
-                >
-                  <Loader2 className="h-4 w-4 animate-spin text-cyan-200" />
-                  Processing your clinical summary...
-                </motion.div>
-              )}
-
-              <div ref={chatEndRef} />
-            </div>
-
-            <div className="border-t border-white/10 p-5">
-              <div className="flex items-center gap-2 rounded-[1.5rem] border border-white/10 bg-[#0b1824] p-2">
-                <input
-                  type="text"
-                  className="ml-2 flex-1 bg-transparent p-2.5 text-sm text-white outline-none placeholder:text-slate-500"
-                  placeholder={
-                    symptoms.length === 0
-                      ? "Type your main symptom..."
-                      : "Reply with yes, no, or restart"
-                  }
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                  disabled={loading}
-                />
-
-                <button
-                  onClick={sendMessage}
-                  disabled={loading || !input.trim()}
-                  className="rounded-xl bg-cyan-300 p-3 text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.aside
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08 }}
-            className="space-y-6"
-          >
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-7 backdrop-blur-2xl">
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-200">
-                How It Works
+            <div>
+              <h3 className="text-sm font-bold text-[var(--text-main)]">
+                Health Guide
+              </h3>
+              <p className="text-xs text-[var(--text-sub)]">
+                Online & Ready to Help
               </p>
-
-              <div className="mt-5 space-y-4">
-                <div className="rounded-2xl border border-white/10 bg-[#0b1824] p-4 text-sm text-slate-300">
-                  1. Enter your primary symptom
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-[#0b1824] p-4 text-sm text-slate-300">
-                  2. Answer a few short yes-or-no prompts
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-[#0b1824] p-4 text-sm text-slate-300">
-                  3. Review the generated AI summary
-                </div>
-              </div>
             </div>
+          </div>
 
-            <div className="rounded-[2rem] border border-amber-300/20 bg-amber-400/10 p-6">
-              <div className="flex items-start gap-3">
-                <ShieldAlert className="mt-0.5 h-5 w-5 text-amber-200" />
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.16em] text-amber-100">
-                    Safety note
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-amber-50/85">
-                    This assistant is for informational use only. If symptoms
-                    are severe or urgent, seek immediate medical care instead of
-                    relying on chat guidance.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-7 backdrop-blur-2xl">
-              <div className="flex items-start gap-3">
-                <MessageSquareHeart className="mt-0.5 h-5 w-5 text-cyan-200" />
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-200">
-                    Best results
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-slate-400">
-                    Keep answers short and accurate. Start with a clear symptom
-                    like fever, cough, headache, vomiting, or fatigue.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.aside>
+          <button
+            onClick={resetChat}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-sub)] hover:bg-[var(--bg-surface-hover)] transition-colors"
+          >
+            <RotateCcw className="h-3 w-3" />
+            <span>Restart</span>
+          </button>
         </div>
 
-        <AnimatePresence>
-          {summary && (
-            <motion.div
-              id="summary-card"
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-8 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 backdrop-blur-2xl"
-            >
-              <div className="mb-8 flex flex-col gap-4 border-b border-white/10 pb-6 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-200">
-                    Clinical Summary
-                  </p>
-                  <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">
-                    Session report
-                  </h2>
-                  <p className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
-                    {summary.id}
-                  </p>
-                </div>
-
-                <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
-                  Issued: {summary.time}
-                </div>
-              </div>
-
-              <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-                <div className="rounded-[1.75rem] border border-white/10 bg-[#0b1824] p-6">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">
-                    Logged symptoms
-                  </p>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {summary.symptoms.map((symptom, index) => (
-                      <span
-                        key={`${symptom}-${index}`}
-                        className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium capitalize text-slate-200"
-                      >
-                        {symptom}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rounded-[1.75rem] border border-cyan-300/20 bg-cyan-300/10 p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-900/70">
-                        Most likely match
-                      </p>
-                      <h3 className="mt-2 text-2xl font-black capitalize text-slate-950">
-                        {summary.prediction}
-                      </h3>
-                    </div>
-
-                    <CheckCircle2 className="h-7 w-7 text-slate-950/40" />
-                  </div>
-                </div>
-              </div>
-
-              {summary.top3 && summary.top3.length > 0 && (
-                <div className="mt-6 rounded-[1.75rem] border border-white/10 bg-[#0b1824] p-6">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">
-                    Ranked matches
-                  </p>
-
-                  <div className="mt-4 space-y-3">
-                    {summary.top3.map((item, index) => (
-                      <div
-                        key={`${item.disease}-${index}`}
-                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-                      >
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-sm font-bold text-white">
-                            {item.disease}
-                          </span>
-                          <span className="text-sm font-semibold text-slate-300">
-                            {(Number(item.confidence || 0) * 100).toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <button
-                  onClick={exportPDF}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-cyan-300 px-5 py-4 text-sm font-bold uppercase tracking-[0.18em] text-slate-950 transition hover:bg-cyan-200"
+        {/* Message Bubble Feed */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {messages.map((msg, idx) => {
+            const isUser = msg.sender === "user";
+            return (
+              <div
+                key={idx}
+                className={`flex items-start gap-3 ${
+                  isUser ? "flex-row-reverse" : ""
+                }`}
+              >
+                <div
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                    isUser
+                      ? "bg-[var(--primary)] text-white"
+                      : "bg-[var(--bg-surface-subtle)] text-[var(--text-sub)] border border-[var(--border-color)]"
+                  }`}
                 >
-                  <FileText className="h-4 w-4" />
-                  Export PDF
-                </button>
+                  {isUser ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+                </div>
 
-                <Link
-                  to="/"
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-white/10"
+                <div
+                  className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                    isUser
+                      ? "bg-[var(--primary)] text-white rounded-tr-none font-medium"
+                      : "bg-[var(--bg-surface-subtle)] text-[var(--text-main)] rounded-tl-none border border-[var(--border-color)]"
+                  }`}
                 >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
-                </Link>
+                  {msg.text}
+                </div>
               </div>
-            </motion.div>
+            );
+          })}
+
+          {loading && (
+            <div className="flex items-center gap-2 rounded-2xl bg-[var(--bg-surface-subtle)] border border-[var(--border-color)] px-4 py-3 text-xs text-[var(--text-sub)] w-fit">
+              <Loader2 className="h-4 w-4 animate-spin text-[var(--primary)]" />
+              <span>Analyzing your answers...</span>
+            </div>
           )}
-        </AnimatePresence>
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Quick Yes/No Options */}
+        {isQuestionActive && !loading && (
+          <div className="flex items-center gap-2 border-t border-[var(--border-color)] bg-[var(--bg-surface-subtle)] px-6 py-2">
+            <span className="text-xs text-[var(--text-sub)]">Quick reply:</span>
+            <button
+              type="button"
+              onClick={() => handleSend("Yes")}
+              className="rounded-lg border border-[var(--primary)] bg-[var(--primary-light)] px-4 py-1 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors"
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSend("No")}
+              className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-1 text-xs font-semibold text-[var(--text-sub)] hover:bg-[var(--bg-surface-hover)] transition-colors"
+            >
+              No
+            </button>
+          </div>
+        )}
+
+        {/* Text Input */}
+        <div className="border-t border-[var(--border-color)] p-4 bg-[var(--bg-surface)]">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
+            }}
+            className="flex gap-2"
+          >
+            <input
+              type="text"
+              placeholder={
+                symptoms.length === 0
+                  ? "Describe your main symptom (e.g. fever, headache)..."
+                  : "Type your answer or click Yes / No above..."
+              }
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={loading}
+              className="flex-1 rounded-xl border border-[var(--border-color)] bg-[var(--bg-app)] px-4 py-2.5 text-sm text-[var(--text-main)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:bg-[var(--bg-surface)] outline-none transition-all"
+            />
+            <button
+              type="submit"
+              disabled={loading || !input.trim()}
+              className="inline-flex items-center justify-center rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-white hover:bg-[var(--primary-hover)] disabled:opacity-40 transition-all"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
       </div>
+
+      {/* Generated Report */}
+      {summary && (
+        <div
+          id="chat-summary-report"
+          className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-200"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--border-color)] pb-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--primary)]">
+                Health Summary Report ({summary.id})
+              </span>
+              <h3 className="text-xl font-bold text-[var(--text-main)] mt-0.5">
+                Symptom Conversation Results
+              </h3>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-[var(--text-muted)]">
+                {summary.time}
+              </span>
+              <button
+                type="button"
+                onClick={exportPDF}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--primary)] px-4 py-2 text-xs font-bold text-white hover:bg-[var(--primary-hover)] transition-all shadow-sm"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Download Report (PDF)</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-subtle)] p-4 space-y-2">
+              <span className="text-xs font-bold text-[var(--text-sub)] uppercase">
+                Reported Symptoms
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {summary.symptoms.map((s, i) => (
+                  <span
+                    key={i}
+                    className="rounded-md bg-[var(--bg-surface)] border border-[var(--border-color)] px-2.5 py-1 text-xs font-medium capitalize text-[var(--text-main)]"
+                  >
+                    {s.replace(/_/g, " ")}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-subtle)] p-4 space-y-1">
+              <span className="text-xs font-bold text-[var(--text-sub)] uppercase">
+                Most Likely Match
+              </span>
+              <div className="flex items-center gap-2 pt-1">
+                <CheckCircle className="h-5 w-5 text-[var(--success)]" />
+                <span className="text-lg font-bold text-[var(--text-main)] capitalize">
+                  {summary.prediction}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {summary.top3 && summary.top3.length > 0 && (
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-[var(--text-sub)] uppercase">
+                Top Probable Conditions
+              </span>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {summary.top3.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-subtle)] p-3 text-xs"
+                  >
+                    <span className="font-semibold text-[var(--text-main)] capitalize">
+                      {item.disease}
+                    </span>
+                    <span className="font-bold text-[var(--primary)]">
+                      {Math.round(Number(item.confidence || 0) * 100)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -2,11 +2,14 @@ const express = require("express");
 const axios = require("axios");
 const mongoose = require("mongoose");
 const Prediction = require("../models/Prediction");
+const { optionalAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
-router.post("/", async (req, res, next) => {
+router.post("/", optionalAuth, async (req, res, next) => {
   const { symptoms, location } = req.body;
+  const userId = req.user?.id || null;
+  const userName = req.user?.name || "";
 
   // 🔹 Validate ENV
   if (!process.env.ML_SERVICE_URL) {
@@ -51,6 +54,8 @@ router.post("/", async (req, res, next) => {
           top3Predictions: result.top3,
           precautions: result.precautions,
           userLocation: location || null,
+          userId: userId,
+          userName: userName,
         });
       } else {
         console.warn("⚠️ DB save skipped: MongoDB is not connected.");

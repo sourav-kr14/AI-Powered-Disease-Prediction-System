@@ -37,6 +37,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // --- Routes ---
+app.use("/api/auth", require("./routes/auth"));
 app.use("/api/predict", require("./routes/predict"));
 app.use("/api/hospitals", require("./routes/hospitals"));
 

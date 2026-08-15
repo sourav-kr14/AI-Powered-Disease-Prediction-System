@@ -1,216 +1,199 @@
-import React, { useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import {
-  Plus,
-  Sparkles,
-  X,
-  ArrowRight,
-  Stethoscope,
-  AlertCircle,
-} from "lucide-react";
+import { useState } from "react";
+import { Plus, X, Search, Sparkles } from "lucide-react";
 
-const suggestedSymptoms = [
-  "fever",
-  "cough",
-  "headache",
-  "fatigue",
-  "sore throat",
-  "vomiting",
-  "chest pain",
-  "shortness of breath",
+const commonSymptoms = [
+  "Fever",
+  "Cough",
+  "Headache",
+  "Fatigue",
+  "Sore Throat",
+  "Nausea",
+  "Vomiting",
+  "Shortness of Breath",
+  "Chest Pain",
+  "Joint Pain",
+  "Dizziness",
+  "Skin Rash",
 ];
 
 export default function InputCard({ onPredict, loading }) {
   const [input, setInput] = useState("");
   const [symptoms, setSymptoms] = useState([]);
 
-  const normalizedSymptoms = useMemo(() => {
-    return symptoms.filter(Boolean);
-  }, [symptoms]);
-
-  const addSymptom = (value) => {
-    const cleaned = value.trim().toLowerCase();
-
-    if (!cleaned) return;
-    if (symptoms.includes(cleaned)) return;
-
-    setSymptoms((prev) => [...prev, cleaned]);
+  const addSymptom = (name) => {
+    const clean = name.trim().toLowerCase().replace(/\s+/g, "_");
+    if (!clean || symptoms.includes(clean)) return;
+    setSymptoms([...symptoms, clean]);
   };
 
-  const removeSymptom = (value) => {
-    setSymptoms((prev) => prev.filter((item) => item !== value));
+  const removeSymptom = (name) => {
+    setSymptoms(symptoms.filter((s) => s !== name));
   };
 
-  const handleAddFromInput = () => {
-    const entries = input
+  const handleAddInput = () => {
+    if (!input.trim()) return;
+    const items = input
       .split(",")
-      .map((item) => item.trim().toLowerCase())
+      .map((i) => i.trim().toLowerCase().replace(/\s+/g, "_"))
       .filter(Boolean);
 
-    if (!entries.length) return;
-
-    const nextSymptoms = [...symptoms];
-
-    entries.forEach((entry) => {
-      if (!nextSymptoms.includes(entry)) {
-        nextSymptoms.push(entry);
+    const updated = [...symptoms];
+    items.forEach((item) => {
+      if (!updated.includes(item)) {
+        updated.push(item);
       }
     });
 
-    setSymptoms(nextSymptoms);
+    setSymptoms(updated);
     setInput("");
   };
 
-  const handlePredict = () => {
-    const typedEntries = input
-      .split(",")
-      .map((item) => item.trim().toLowerCase())
-      .filter(Boolean);
-
-    const merged = [...normalizedSymptoms];
-
-    typedEntries.forEach((entry) => {
-      if (!merged.includes(entry)) {
-        merged.push(entry);
-      }
-    });
-
-    if (!merged.length) return;
-
-    setSymptoms(merged);
-    setInput("");
-    onPredict(merged);
-  };
-
-  const handleKeyDown = (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      handleAddFromInput();
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddInput();
     }
   };
 
-  const helperText =
-    normalizedSymptoms.length === 0
-      ? "Add at least one symptom to begin analysis."
-      : normalizedSymptoms.length === 1
-        ? "Add one or two more symptoms for better matching."
-        : "Your symptom set is ready for analysis.";
+  const handleCheck = () => {
+    let finalSymptoms = [...symptoms];
+    if (input.trim()) {
+      const items = input
+        .split(",")
+        .map((i) => i.trim().toLowerCase().replace(/\s+/g, "_"))
+        .filter(Boolean);
+
+      items.forEach((item) => {
+        if (!finalSymptoms.includes(item)) {
+          finalSymptoms.push(item);
+        }
+      });
+      setSymptoms(finalSymptoms);
+      setInput("");
+    }
+
+    if (finalSymptoms.length > 0) {
+      onPredict(finalSymptoms);
+    }
+  };
 
   return (
-    <div className="rounded-[2rem] border border-white/10 bg-[#0b1824] p-6 md:p-7">
-      <div className="mb-5 flex items-start gap-4">
-        <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-cyan-200">
-          <Stethoscope className="h-5 w-5" />
-        </div>
-
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-200">
-            Symptom Input
-          </p>
-          <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-white">
-            Tell us what you’re feeling
-          </h2>
-          <p className="mt-2 text-sm leading-7 text-slate-400">
-            Add symptoms one by one or separate multiple symptoms with commas.
-          </p>
-        </div>
+    <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-6 shadow-sm space-y-6">
+      <div>
+        <h2 className="text-lg font-bold text-[var(--text-main)]">
+          What symptoms are you experiencing?
+        </h2>
+        <p className="text-sm text-[var(--text-sub)] mt-0.5">
+          Select from popular symptoms below or type in your own.
+        </p>
       </div>
 
-      <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4">
-        <label className="mb-3 block text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
-          Symptoms
-        </label>
-
-        <div className="flex flex-wrap gap-2">
-          {normalizedSymptoms.map((symptom) => (
-            <motion.div
-              key={symptom}
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-100"
-            >
-              <span>{symptom}</span>
-              <button
-                type="button"
-                onClick={() => removeSymptom(symptom)}
-                className="rounded-full p-0.5 text-cyan-200 transition hover:bg-white/10 hover:text-white"
-                aria-label={`Remove ${symptom}`}
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </motion.div>
-          ))}
-
-          {normalizedSymptoms.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-white/10 px-4 py-3 text-sm text-slate-500">
-              No symptoms added yet
-            </div>
-          )}
-        </div>
-
-        <div className="mt-4 flex flex-col gap-3 md:flex-row">
+      {/* Input box */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-muted)]" />
           <input
             type="text"
-            placeholder="Example: fever, cough, sore throat"
+            placeholder="Type a symptom (e.g. headache, fever, back pain)..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={loading}
-            className="w-full rounded-2xl border border-white/10 bg-[#07111a] px-4 py-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/40"
+            className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-app)] py-3 pl-10 pr-4 text-sm text-[var(--text-main)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:bg-[var(--bg-surface)] transition-all outline-none"
           />
-
-          <button
-            type="button"
-            onClick={handleAddFromInput}
-            disabled={loading || !input.trim()}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-bold uppercase tracking-[0.18em] text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Plus className="h-4 w-4" />
-            Add
-          </button>
         </div>
-
-        <div className="mt-4 flex items-start gap-2 rounded-2xl border border-amber-300/15 bg-amber-300/10 px-4 py-3">
-          <AlertCircle className="mt-0.5 h-4 w-4 text-amber-200" />
-          <p className="text-sm leading-6 text-amber-50/85">{helperText}</p>
-        </div>
-      </div>
-
-      <div className="mt-6">
-        <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
-          <Sparkles className="h-4 w-4 text-cyan-200" />
-          Suggested symptoms
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {suggestedSymptoms.map((symptom) => (
-            <button
-              key={symptom}
-              type="button"
-              onClick={() => addSymptom(symptom)}
-              disabled={loading}
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 transition hover:border-cyan-300/30 hover:bg-cyan-300/10 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {symptom}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-slate-500">
-          {normalizedSymptoms.length} symptom
-          {normalizedSymptoms.length === 1 ? "" : "s"} selected
-        </div>
-
         <button
           type="button"
-          onClick={handlePredict}
-          disabled={loading || (!normalizedSymptoms.length && !input.trim())}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-300 px-6 py-4 text-sm font-bold uppercase tracking-[0.2em] text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={handleAddInput}
+          disabled={loading || !input.trim()}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-subtle)] px-4 py-3 text-sm font-medium text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] disabled:opacity-40 transition-colors"
         >
-          {loading ? "Analyzing..." : "Predict now"}
-          <ArrowRight className="h-4 w-4" />
+          <Plus className="h-4 w-4" />
+          <span>Add</span>
+        </button>
+      </div>
+
+      {/* Selected Symptoms */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-sub)]">
+          <span>Selected symptoms ({symptoms.length})</span>
+          {symptoms.length > 0 && (
+            <button
+              onClick={() => setSymptoms([])}
+              className="text-[var(--danger)] hover:underline font-normal"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+
+        <div className="min-h-[48px] rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-subtle)] p-3">
+          {symptoms.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {symptoms.map((symptom) => (
+                <span
+                  key={symptom}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-color)] px-3 py-1.5 text-xs font-medium text-[var(--text-main)] shadow-xs"
+                >
+                  <span className="capitalize">{symptom.replace(/_/g, " ")}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeSymptom(symptom)}
+                    className="text-[var(--text-muted)] hover:text-[var(--danger)]"
+                    aria-label={`Remove ${symptom}`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-[var(--text-muted)] py-1">
+              No symptoms added yet. Click from the suggestions below to add them.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Common Suggestions */}
+      <div className="space-y-2">
+        <span className="text-xs font-semibold text-[var(--text-sub)] flex items-center gap-1.5">
+          <Sparkles className="h-3.5 w-3.5 text-[var(--primary)]" />
+          Quick add common symptoms:
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {commonSymptoms.map((name) => {
+            const val = name.toLowerCase().replace(/\s+/g, "_");
+            const isSelected = symptoms.includes(val);
+            return (
+              <button
+                key={name}
+                type="button"
+                onClick={() => (isSelected ? removeSymptom(val) : addSymptom(name))}
+                disabled={loading}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                  isSelected
+                    ? "bg-[var(--primary-light)] text-[var(--primary)] border border-[var(--primary)] font-semibold"
+                    : "bg-[var(--bg-surface-subtle)] text-[var(--text-sub)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)]"
+                }`}
+              >
+                {isSelected ? "✓ " : "+ "}
+                {name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Submit Action */}
+      <div className="pt-2">
+        <button
+          type="button"
+          onClick={handleCheck}
+          disabled={loading || (symptoms.length === 0 && !input.trim())}
+          className="w-full rounded-xl bg-[var(--primary)] py-3.5 text-sm font-bold text-white hover:bg-[var(--primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all text-center"
+        >
+          {loading ? "Analyzing symptoms..." : "Analyze My Symptoms"}
         </button>
       </div>
     </div>
