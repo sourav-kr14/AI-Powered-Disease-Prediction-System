@@ -12,7 +12,7 @@ connectDB();
 
 // --- CORS Configuration ---
 const defaultOrigins = ["http://localhost:5173", "http://localhost:3000"];
-const rawOrigins = process.env.CORS_ORIGINS
+const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim().replace(/\/+$/, "")).filter(Boolean)
   : defaultOrigins;
 
@@ -25,14 +25,14 @@ app.use(
       const cleanOrigin = origin.replace(/\/+$/, "");
 
       if (
-        rawOrigins.includes("*") ||
-        rawOrigins.includes(cleanOrigin) ||
+        allowedOrigins.includes("*") ||
+        allowedOrigins.includes(cleanOrigin) ||
         // Support any vercel deployment subdomain if vercel is configured
-        (cleanOrigin.endsWith(".vercel.app") && rawOrigins.some((o) => o.includes("vercel.app") || o === "*"))
+        (cleanOrigin.endsWith(".vercel.app") && allowedOrigins.some((o) => o.includes("vercel.app") || o === "*"))
       ) {
         callback(null, true);
       } else {
-        console.warn(`⚠️ CORS blocked request from origin: "${origin}". Configured origins:`, rawOrigins);
+        console.warn(`⚠️ CORS blocked request from origin: "${origin}". Configured origins:`, allowedOrigins);
         callback(new Error("Not allowed by CORS"));
       }
     },
