@@ -31,7 +31,8 @@ router.post("/", optionalAuth, async (req, res, next) => {
     .filter(Boolean);
 
   try {
-    const mlUrl = `${process.env.ML_SERVICE_URL}/predict`;
+    const mlBase = process.env.ML_SERVICE_URL.replace(/\/+$/, "");
+    const mlUrl = `${mlBase}/predict`;
     console.log("📡 Calling ML at:", mlUrl);
 
     const mlResponse = await axios.post(
