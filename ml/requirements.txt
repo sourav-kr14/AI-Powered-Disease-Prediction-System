@@ -6,3 +6,6 @@ pandas
 joblib
 xgboost
 scipy
+dill
+cloudpickle
+imbalanced-learn
