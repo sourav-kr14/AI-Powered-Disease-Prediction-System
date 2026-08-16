@@ -134,12 +134,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy ML Service
+        env:
+          HOOK_URL: ${{ secrets.RENDER_ML_DEPLOY_HOOK_URL }}
         run: |
           echo "🚀 Deploying ML Microservice to Production Environment..."
-          # The deployment hook can trigger container registry push, Render deploy hook, or Cloud Run deployment
-          if [ -n "${{ secrets.RENDER_ML_DEPLOY_HOOK_URL }}" ]; then
+          CLEAN_URL=$(echo "$HOOK_URL" | tr -d '\r\n"' | xargs)
+          if [ -n "$CLEAN_URL" ]; then
             echo "📡 Triggering Render ML Service Deploy Hook..."
-            curl -fsS -X POST "${{ secrets.RENDER_ML_DEPLOY_HOOK_URL }}"
+            curl -fsS -X POST "$CLEAN_URL"
+            echo ""
             echo "✅ Render ML deployment triggered."
           else
             echo "ℹ️ RENDER_ML_DEPLOY_HOOK_URL not configured. Prepared container image for host deployment."
@@ -160,11 +163,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy Backend Service
+        env:
+          HOOK_URL: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_URL }}
         run: |
           echo "🚀 Deploying Node.js Express Backend to Production..."
-          if [ -n "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_URL }}" ]; then
+          CLEAN_URL=$(echo "$HOOK_URL" | tr -d '\r\n"' | xargs)
+          if [ -n "$CLEAN_URL" ]; then
             echo "📡 Triggering Render Backend Deploy Hook..."
-            curl -fsS -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_URL }}"
+            curl -fsS -X POST "$CLEAN_URL"
+            echo ""
             echo "✅ Render Backend deployment triggered."
           else
             echo "ℹ️ RENDER_BACKEND_DEPLOY_HOOK_URL not configured. Backend ready for deployment."
@@ -185,11 +192,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy Frontend
+        env:
+          HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |
           echo "🚀 Deploying React 19 Frontend SPA to Production..."
-          if [ -n "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" ]; then
+          CLEAN_URL=$(echo "$HOOK_URL" | tr -d '\r\n"' | xargs)
+          if [ -n "$CLEAN_URL" ]; then
             echo "📡 Triggering Vercel Frontend Deploy Hook..."
-            curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+            curl -fsS -X POST "$CLEAN_URL"
+            echo ""
             echo "✅ Vercel Frontend deployment triggered."
           else
             echo "ℹ️ VERCEL_DEPLOY_HOOK_URL not configured. Frontend ready for deployment."
