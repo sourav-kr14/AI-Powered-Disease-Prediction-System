@@ -11,20 +11,28 @@ const app = express();
 connectDB();
 
 // --- CORS Configuration ---
-// Build allowed origins from environment variable, with safe defaults for development.
-// In production, set CORS_ORIGINS to your actual frontend URL(s).
 const defaultOrigins = ["http://localhost:5173", "http://localhost:3000"];
-const allowedOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
+const rawOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim().replace(/\/+$/, "")).filter(Boolean)
   : defaultOrigins;
 
 app.use(
   cors({
     origin: function (origin, callback) {
       // Allow requests with no origin (mobile apps, curl, server-to-server)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true);
+
+      const cleanOrigin = origin.replace(/\/+$/, "");
+
+      if (
+        rawOrigins.includes("*") ||
+        rawOrigins.includes(cleanOrigin) ||
+        // Support any vercel deployment subdomain if vercel is configured
+        (cleanOrigin.endsWith(".vercel.app") && rawOrigins.some((o) => o.includes("vercel.app") || o === "*"))
+      ) {
         callback(null, true);
       } else {
+        console.warn(`⚠️ CORS blocked request from origin: "${origin}". Configured origins:`, rawOrigins);
         callback(new Error("Not allowed by CORS"));
       }
     },
